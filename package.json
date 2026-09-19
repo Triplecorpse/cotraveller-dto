@@ -1,0 +1,19 @@
+{
+  "name": "@cotraveller/dto",
+  "version": "0.0.1",
+  "description": "Shared DTOs and interfaces for the cotraveller backend and frontend",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
