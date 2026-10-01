@@ -10,6 +10,8 @@ frontend, based on the technical specification (section 9, Data Model).
 - `PlaceResultDto` — normalized, provider-agnostic place result.
 - `CategoryOptionDto` / `ProviderCategoryMapping` — controlled category
   mapping configuration.
+- `PlaceDescriptionDto` / `PlaceDescriptionParagraphDto` — stored place
+  description (paragraphs with their source URLs).
 
 ## Usage
 
