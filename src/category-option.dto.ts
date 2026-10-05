@@ -5,8 +5,12 @@ import { PlacesProvider } from './places-provider.enum';
  * application configuration, never AI-generated.
  */
 export interface ProviderCategoryMapping {
+  /** Free-text query, for providers that search by text (Google Text Search). */
   searchPhrase?: string;
+  /** Single place type (Google's `includedType`). */
   placeType?: string;
+  /** Category codes OR'd together (Geoapify Places `categories`). */
+  categories?: string[];
 }
 
 /**
