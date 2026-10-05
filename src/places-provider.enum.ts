@@ -7,4 +7,6 @@ export enum PlacesProvider {
   HERE = 'here',
   MAPBOX = 'mapbox',
   OSM = 'osm',
+  /** cotraveller's own curated places, stored in its database. */
+  INTERNAL = 'internal',
 }

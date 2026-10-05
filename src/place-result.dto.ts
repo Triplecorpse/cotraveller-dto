@@ -40,6 +40,12 @@ export interface PlaceResultDto {
   mapsUrl: string | null;
   /** Authors of `photoUrl` that must be credited wherever it's shown. Empty when none are required/known. */
   photoAuthors: PhotoAuthorDto[];
+  /**
+   * Remarks about the opening hours to show with them, e.g. "Confirmed:
+   * same hours on public holidays". Only the internal provider has these;
+   * null otherwise.
+   */
+  scheduleNotes: string | null;
 }
 
 /** A point in the week: `day` 0 = Sunday … 6 = Saturday, local time of the place. */
