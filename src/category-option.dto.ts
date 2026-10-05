@@ -10,6 +10,12 @@ export interface ProviderCategoryMapping {
   searchPhrase?: string;
   /** Single place type (Google's `includedType`). */
   placeType?: string;
+  /**
+   * Other Google types this category's places carry as their primary type
+   * (e.g. `parking_lot` under `parking`), for recognising a place's
+   * category outside a search. Never searched for.
+   */
+  relatedTypes?: string[];
   /** Category codes OR'd together (Geoapify Places `categories`). */
   categories?: string[];
 }

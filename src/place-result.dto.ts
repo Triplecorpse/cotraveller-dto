@@ -51,10 +51,35 @@ export interface PlaceResultDto {
    * place isn't a fuel station.
    */
   fuelTypes: FuelType[];
+  /**
+   * What is known about a car park, from OpenStreetMap. Null when the
+   * place isn't a car park or the provider has no such data (Google).
+   */
+  parking: ParkingInfoDto | null;
 }
 
 /** A fuel a station can sell: petrol, diesel, LPG (autogas) or CNG (methane). */
 export type FuelType = 'petrol' | 'diesel' | 'lpg' | 'cng';
+
+/** How a car park is built, from OSM's `parking=*`. */
+export type ParkingKind = 'surface' | 'multi_storey' | 'underground' | 'rooftop';
+
+/** A car park's details; each one is null when unknown. */
+export interface ParkingInfoDto {
+  kind: ParkingKind | null;
+  /** Whether parking costs money. */
+  fee: boolean | null;
+  /** The price as OSM's `charge` writes it, e.g. "3.50 EUR/hour". */
+  charge: string | null;
+  /** `customers` when only a business's customers may park; `public` when anyone may. */
+  access: 'public' | 'customers' | null;
+  /** Number of spaces. */
+  capacity: number | null;
+  /** OSM's `maxstay` as written, e.g. "2 hours". */
+  maxStay: string | null;
+  /** Vehicle height limit. */
+  maxHeightMeters: number | null;
+}
 
 /** A point in the week: `day` 0 = Sunday … 6 = Saturday, local time of the place. */
 export interface WeekTimeDto {
