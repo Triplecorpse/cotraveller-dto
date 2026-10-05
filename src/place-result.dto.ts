@@ -46,7 +46,15 @@ export interface PlaceResultDto {
    * null otherwise.
    */
   scheduleNotes: string | null;
+  /**
+   * Fuels a fuel station is known to sell. Empty when unknown or when the
+   * place isn't a fuel station.
+   */
+  fuelTypes: FuelType[];
 }
+
+/** A fuel a station can sell: petrol, diesel, LPG (autogas) or CNG (methane). */
+export type FuelType = 'petrol' | 'diesel' | 'lpg' | 'cng';
 
 /** A point in the week: `day` 0 = Sunday … 6 = Saturday, local time of the place. */
 export interface WeekTimeDto {
