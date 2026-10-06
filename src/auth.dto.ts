@@ -24,6 +24,11 @@ export interface AuthUserDto {
 /** Response of `GET /auth/check` for a valid access token (otherwise 401). */
 export interface AuthCheckDto {
   user: AuthUserDto;
+  /**
+   * The user's Cognito user pool groups when the token was issued, e.g.
+   * `admin`. A change shows once the token is next refreshed.
+   */
+  roles: string[];
   /** When the access token expires, ISO 8601. */
   expiresAt: string;
 }
