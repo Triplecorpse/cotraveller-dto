@@ -21,6 +21,13 @@ export interface ProviderCategoryMapping {
 }
 
 /**
+ * How a category's search results are ordered: by how notable a place is
+ * (the provider's relevance, e.g. for sights worth a trip) or by distance
+ * (for the nearest of something, e.g. a café or a fuel station).
+ */
+export type CategoryRanking = 'relevance' | 'distance';
+
+/**
  * UI-facing category option with its provider-specific mappings.
  * Maps to spec section 9, entity "CategoryOption".
  */
@@ -39,4 +46,10 @@ export interface CategoryOptionDto {
    * don't. Defaults to false when omitted.
    */
   describable?: boolean;
+  /**
+   * How search results in this category are ordered. Defaults to
+   * `distance` when omitted. Providers without a relevance order (Geoapify)
+   * always sort by distance.
+   */
+  ranking?: CategoryRanking;
 }
