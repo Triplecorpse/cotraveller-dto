@@ -56,6 +56,21 @@ export interface PlaceResultDto {
    * place isn't a car park or the provider has no such data (Google).
    */
   parking: ParkingInfoDto | null;
+  /**
+   * Where the place is, as a traveller would say it: the town it's in, or
+   * the nearest notable towns. Null when no town is near; missing from
+   * places saved or cached before it existed.
+   */
+  locality?: PlaceLocalityDto | null;
+}
+
+/** The town a place is in, or the towns it is near, and its country. */
+export interface PlaceLocalityDto {
+  /** `in`: the place is in `cities[0]`. `near`: it's in none; these are the nearest notable ones. */
+  kind: 'in' | 'near';
+  cities: string[];
+  /** The country's English name. */
+  country: string | null;
 }
 
 /** A fuel a station can sell: petrol, diesel, LPG (autogas) or CNG (methane). */
