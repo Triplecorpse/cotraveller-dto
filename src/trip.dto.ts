@@ -89,6 +89,8 @@ export interface TripDto extends TripFormStateDto {
   name: string;
   /** The trip's own list; never shown among the user's other lists. */
   listId: string;
+  /** How many places are on it. */
+  placeCount: number;
   createdAt: string;
   updatedAt: string;
 }
