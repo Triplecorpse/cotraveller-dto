@@ -120,7 +120,29 @@ export interface TripPlaceDto {
   id: string;
   provider: string;
   providerPlaceId: string;
+  /** OSM element, e.g. `node/123`, when known. */
+  osmId: string | null;
+  /**
+   * What was saved of an OSM-derived place, shown while (or when) the
+   * place can't be looked up; null for Google places, whose content is
+   * never stored.
+   */
+  snapshot: TripPlaceSnapshotDto | null;
   createdAt: string;
+}
+
+export interface TripPlaceSnapshotDto {
+  name: string | null;
+  formattedAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  category: CategoryId | null;
+}
+
+/** Body of `PATCH /trips/:tripId`: a new name, a new form (its search changed), or both. */
+export interface UpdateTripRequestDto {
+  name?: string;
+  form?: TripFormStateDto;
 }
 
 /**
