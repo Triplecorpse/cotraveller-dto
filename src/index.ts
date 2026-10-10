@@ -5,4 +5,5 @@ export * from './category-option.dto';
 export * from './place-description.dto';
 export * from './auth.dto';
 export * from './category-id.enum';
+export * from './list.dto';
 export * from './trip.dto';

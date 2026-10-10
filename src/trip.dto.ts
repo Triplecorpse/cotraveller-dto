@@ -1,4 +1,5 @@
 import { CategoryId } from './category-id.enum';
+import type { AddListPlaceRequestDto, ListDto, ListPlaceDto } from './list.dto';
 import type { GeoBoundsDto } from './places-search.dto';
 
 /** How the traveller gets around at the destination. */
@@ -81,55 +82,14 @@ export interface TripFormStateDto {
   searchRadiusMeters: number;
 }
 
-/** A saved trip, with the list of places picked for it. */
-export interface TripDto extends TripFormStateDto {
-  id: string;
-  name: string;
+/**
+ * A saved trip: a list of places with the trip form as its metadata. Its
+ * `id` is the trip's, `listId` the list's; `isDefault` is always false.
+ * Its places are `ListPlaceDto`s on that list.
+ */
+export interface TripDto extends ListDto, TripFormStateDto {
   /** The trip's own list; never shown among the user's other lists. */
   listId: string;
-  /** How many places are on it. */
-  placeCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * A place to save, as the client showed it: its Geoapify id, category, and
- * a snapshot (OSM data) kept as a fallback for when it can't be looked up.
- */
-export interface SavePlaceRequestDto {
-  providerPlaceId: string;
-  /** The search category it was found under. */
-  category?: CategoryId | null;
-  name?: string;
-  formattedAddress?: string | null;
-  latitude?: number;
-  longitude?: number;
-  /** The OSM permalink, for the OSM id (Geoapify places). */
-  osmUrl?: string | null;
-}
-
-/** A place on a trip's list. */
-export interface TripPlaceDto {
-  /** The saved place's id: what removing it takes. */
-  id: string;
-  providerPlaceId: string;
-  /** OSM element, e.g. `node/123`, when known. */
-  osmId: string | null;
-  /**
-   * What was saved of the place, shown while (or when) it can't be looked
-   * up; null for places saved before snapshots were kept.
-   */
-  snapshot: TripPlaceSnapshotDto | null;
-  createdAt: string;
-}
-
-export interface TripPlaceSnapshotDto {
-  name: string | null;
-  formattedAddress: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  category: CategoryId | null;
 }
 
 /** Body of `PATCH /trips/:tripId`: a new name, a new form (its search changed), or both. */
@@ -144,11 +104,11 @@ export interface UpdateTripRequestDto {
  */
 export interface CreateTripRequestDto {
   form: TripFormStateDto;
-  place: SavePlaceRequestDto;
+  place: AddListPlaceRequestDto;
 }
 
 /** Response of `POST /trips`: the new trip, named, and its first place. */
 export interface CreateTripResponseDto {
   trip: TripDto;
-  place: TripPlaceDto;
+  place: ListPlaceDto;
 }
