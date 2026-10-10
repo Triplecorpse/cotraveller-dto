@@ -1,3 +1,4 @@
+import type { CategoryId } from './category-id.enum';
 import { PlaceResultDto } from './place-result.dto';
 
 /**
@@ -9,7 +10,7 @@ export interface PlacesSearchRequestDto {
   originLongitude: number;
   radiusMeters: number;
   /** Category ids from `CategoryOptionDto.id`. */
-  categories: string[];
+  categories: CategoryId[];
   /**
    * `nextPageToken` from the previous page, to load more; omitted for a
    * fresh search.

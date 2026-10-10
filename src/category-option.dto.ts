@@ -1,3 +1,4 @@
+import type { CategoryId } from './category-id.enum';
 import { PlacesProvider } from './places-provider.enum';
 import type { FuelType } from './place-result.dto';
 
@@ -32,7 +33,7 @@ export type CategoryRanking = 'relevance' | 'distance';
  * Maps to spec section 9, entity "CategoryOption".
  */
 export interface CategoryOptionDto {
-  id: string;
+  id: CategoryId;
   label: string;
   providerMappings: Partial<Record<PlacesProvider, ProviderCategoryMapping>>;
   /**

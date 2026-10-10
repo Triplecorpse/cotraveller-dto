@@ -1,3 +1,5 @@
+import type { CategoryId } from './category-id.enum';
+
 /**
  * Provider-agnostic, normalized place result (FR-010, FR-011). Every
  * provider returns exactly this shape, so the frontend can switch
@@ -11,7 +13,7 @@ export interface PlaceResultDto {
   formattedAddress: string | null;
   latitude: number;
   longitude: number;
-  category: string | null;
+  category: CategoryId | null;
   rating: number | null;
   userRatingsTotal: number | null;
   distanceMeters: number | null;
