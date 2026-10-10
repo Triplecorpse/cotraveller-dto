@@ -2,8 +2,7 @@ import type { CategoryId } from './category-id.enum';
 import { PlaceResultDto } from './place-result.dto';
 
 /**
- * Body of `POST /places/:provider/search` (FR-004, FR-005). The same
- * request works for every provider.
+ * Body of `POST /places/search` (FR-004, FR-005).
  */
 export interface PlacesSearchRequestDto {
   originLatitude: number;
@@ -18,7 +17,7 @@ export interface PlacesSearchRequestDto {
   pageToken?: string | null;
 }
 
-/** Response of `POST /places/:provider/search`. */
+/** Response of `POST /places/search`. */
 export interface PlacesSearchPageDto {
   /**
    * Sorted by distance from the origin when every requested category ranks
@@ -33,7 +32,7 @@ export interface PlacesSearchPageDto {
   nextPageToken: string | null;
 }
 
-/** One starting-location suggestion from `GET /places/:provider/autocomplete`. */
+/** One starting-location suggestion from `GET /places/autocomplete`. */
 export interface PlaceSuggestionDto {
   placeId: string;
   mainText: string;
@@ -55,7 +54,7 @@ export interface GeoBoundsDto {
   west: number;
 }
 
-/** A chosen starting location, from `GET /places/:provider/resolve/:placeId`. */
+/** A chosen starting location, from `GET /places/resolve/:placeId`. */
 export interface ResolvedPlaceDto {
   placeId: string;
   formattedAddress: string;

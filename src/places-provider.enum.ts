@@ -1,5 +1,8 @@
 /**
- * Supported places providers. Keep provider-neutral per NFR-008.
+ * Sources of places data. Places come from OpenStreetMap: `GEOAPIFY` for
+ * search and `OSM` for the background import's category tags. The other
+ * values stay because stored rows (and the database's `places_provider`
+ * type) may still hold them.
  */
 export enum PlacesProvider {
   GOOGLE = 'google',

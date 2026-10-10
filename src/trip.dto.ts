@@ -1,5 +1,4 @@
 import { CategoryId } from './category-id.enum';
-import { PlacesProvider } from './places-provider.enum';
 import type { GeoBoundsDto } from './places-search.dto';
 
 /** How the traveller gets around at the destination. */
@@ -44,8 +43,7 @@ export interface TripOriginDto {
   source: OriginSource;
   /** What was typed before picking, e.g. "hotel delfino"; null for the current location. */
   inputText: string | null;
-  provider: PlacesProvider | null;
-  /** The picked suggestion's provider id. */
+  /** The picked suggestion's (Geoapify) place id. */
   placeId: string | null;
   /** The suggestion's first line, e.g. "Hotel Delfino": what the trip calls the place. */
   mainText: string | null;
@@ -96,13 +94,10 @@ export interface TripDto extends TripFormStateDto {
 }
 
 /**
- * A place to save, as the client showed it: its ids and category and, for
- * an OSM-derived (Geoapify) place, a snapshot kept as a fallback. Google
- * places are kept by id only; internal ones are read from the backend's
- * own table.
+ * A place to save, as the client showed it: its Geoapify id, category, and
+ * a snapshot (OSM data) kept as a fallback for when it can't be looked up.
  */
 export interface SavePlaceRequestDto {
-  provider: 'google' | 'geoapify' | 'internal';
   providerPlaceId: string;
   /** The search category it was found under. */
   category?: CategoryId | null;
@@ -118,14 +113,12 @@ export interface SavePlaceRequestDto {
 export interface TripPlaceDto {
   /** The saved place's id: what removing it takes. */
   id: string;
-  provider: string;
   providerPlaceId: string;
   /** OSM element, e.g. `node/123`, when known. */
   osmId: string | null;
   /**
-   * What was saved of an OSM-derived place, shown while (or when) the
-   * place can't be looked up; null for Google places, whose content is
-   * never stored.
+   * What was saved of the place, shown while (or when) it can't be looked
+   * up; null for places saved before snapshots were kept.
    */
   snapshot: TripPlaceSnapshotDto | null;
   createdAt: string;

@@ -1,13 +1,12 @@
 import type { CategoryId } from './category-id.enum';
 
 /**
- * Provider-agnostic, normalized place result (FR-010, FR-011). Every
- * provider returns exactly this shape, so the frontend can switch
- * providers without changing how it renders a place.
+ * A place as the app shows it (FR-010, FR-011), from OpenStreetMap data
+ * (Geoapify and our own mirror of it).
  * Maps to spec section 9, entity "PlaceResult".
  */
 export interface PlaceResultDto {
-  provider: string;
+  /** The Geoapify place id: what the place is looked up and saved by. */
   providerPlaceId: string;
   name: string;
   formattedAddress: string | null;

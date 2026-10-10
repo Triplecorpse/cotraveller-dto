@@ -7,17 +7,10 @@ import type { FuelType } from './place-result.dto';
  * application configuration, never AI-generated.
  */
 export interface ProviderCategoryMapping {
-  /** Free-text query, for providers that search by text (Google Text Search). */
-  searchPhrase?: string;
-  /** Single place type (Google's `includedType`). */
-  placeType?: string;
   /**
-   * Other Google types this category's places carry as their primary type
-   * (e.g. `parking_lot` under `parking`), for recognising a place's
-   * category outside a search. Never searched for.
+   * Category codes OR'd together: Geoapify Places `categories`, or OSM
+   * tags (`key=value`) for the background import's Overpass queries.
    */
-  relatedTypes?: string[];
-  /** Category codes OR'd together (Geoapify Places `categories`). */
   categories?: string[];
 }
 
