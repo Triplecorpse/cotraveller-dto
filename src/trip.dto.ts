@@ -92,3 +92,46 @@ export interface TripDto extends TripFormStateDto {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * A place to save, as the client showed it: its ids and category and, for
+ * an OSM-derived (Geoapify) place, a snapshot kept as a fallback. Google
+ * places are kept by id only; internal ones are read from the backend's
+ * own table.
+ */
+export interface SavePlaceRequestDto {
+  provider: 'google' | 'geoapify' | 'internal';
+  providerPlaceId: string;
+  /** The search category it was found under. */
+  category?: CategoryId | null;
+  name?: string;
+  formattedAddress?: string | null;
+  latitude?: number;
+  longitude?: number;
+  /** The OSM permalink, for the OSM id (Geoapify places). */
+  osmUrl?: string | null;
+}
+
+/** A place on a trip's list. */
+export interface TripPlaceDto {
+  /** The saved place's id: what removing it takes. */
+  id: string;
+  provider: string;
+  providerPlaceId: string;
+  createdAt: string;
+}
+
+/**
+ * Body of `POST /trips`: a trip is stored when its first place is added,
+ * so the form and that place come together.
+ */
+export interface CreateTripRequestDto {
+  form: TripFormStateDto;
+  place: SavePlaceRequestDto;
+}
+
+/** Response of `POST /trips`: the new trip, named, and its first place. */
+export interface CreateTripResponseDto {
+  trip: TripDto;
+  place: TripPlaceDto;
+}

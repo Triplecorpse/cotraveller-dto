@@ -64,4 +64,6 @@ export interface ResolvedPlaceDto {
   kind: ResolvedPlaceKind;
   /** The area the location covers, when the provider knows it. */
   viewport: GeoBoundsDto | null;
+  /** OSM element, e.g. `way/749057185`, when the provider knows it. */
+  osmId?: string | null;
 }
