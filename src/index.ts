@@ -7,3 +7,4 @@ export * from './auth.dto';
 export * from './category-id.enum';
 export * from './list.dto';
 export * from './trip.dto';
+export * from './export.dto';
