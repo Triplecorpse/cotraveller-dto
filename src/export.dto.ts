@@ -1,4 +1,4 @@
-/** Where an export of a list stands. */
+/** Where an export of a list or a trip stands. */
 export enum ListExportStatus {
   /** Waiting for the worker. */
   Pending = 'pending',
@@ -14,23 +14,29 @@ export enum ListExportStatus {
 export enum ListExportStartOutcome {
   /** A new export was queued. */
   Started = 'started',
-  /** The list already has an export pending or running: that one is returned. */
+  /** The list (or trip) already has an export pending or running: that one is returned. */
   Running = 'running',
-  /** The list hasn't changed since its last finished export: that one is returned. */
+  /** Its places haven't changed since its last finished export: that one is returned. */
   Unchanged = 'unchanged',
 }
 
 /**
- * An export of one of the user's lists: the backend fills in what the PDF
- * shows (opening hours, About texts) for the list's places, then the PDF
- * is made from the stored data. Response of `GET /exports`,
+ * An export of one of the user's lists or trips: the backend fills in what
+ * the PDF shows (opening hours, About texts) for the places, then the PDF
+ * is made from the stored data. A trip's export is of the trip's list, so
+ * `listId` and `listName` are the trip's too. Response of `GET /exports`,
  * `GET /exports/:exportId`.
  */
 export interface ListExportDto {
   id: string;
-  /** The exported list; null once that list was removed. */
+  /** The exported list (a trip's own list for a trip); null once it was removed. */
   listId: string | null;
-  /** The list's name when it was exported. */
+  /**
+   * The exported trip; null for one of the user's lists. Kept after the
+   * trip is removed (then `listId` is null), to tell the two apart.
+   */
+  tripId: string | null;
+  /** The list's (or trip's) name when it was exported. */
   listName: string;
   status: ListExportStatus;
   /** Places on the list when the export ran; null until it starts. */
@@ -52,6 +58,7 @@ export interface ListExportDto {
 
 /** Body of `POST /exports`. */
 export interface StartListExportRequestDto {
+  /** One of the user's own lists, or a trip's list (`TripDto.listId`) to export the trip. */
   listId: string;
 }
 
