@@ -11,13 +11,43 @@ export enum TravelMode {
 }
 
 /**
- * What the starting location stands for: a whole city (searched from its
- * centre) or an exact spot (an address, a hotel, the current location).
+ * What the starting location stands for, which decides how the trip is
+ * searched:
+ * - `exact`: one spot (an address, a hotel, the current location),
+ *   searched around it;
+ * - `city`: a city or district, searched from its centre;
+ * - `region`: a state, province or county, searched inside its border;
+ * - `country`: a whole country, searched inside its border — never
+ *   across it, since a traveller may not be allowed into the next one.
+ *
+ * A region or a country is searched by relevance, not distance (see
+ * `SearchAreaDto`).
  */
 export enum OriginKind {
-  CITY = 'city',
   EXACT = 'exact',
+  CITY = 'city',
+  REGION = 'region',
+  COUNTRY = 'country',
 }
+
+/** The kinds searched inside a border rather than within a radius. */
+export type AreaOriginKind = OriginKind.REGION | OriginKind.COUNTRY;
+
+/** Whether a kind is searched inside a border (`SearchAreaDto`) rather than within a radius. */
+export function isAreaOriginKind(kind: OriginKind): kind is AreaOriginKind {
+  return kind === OriginKind.REGION || kind === OriginKind.COUNTRY;
+}
+
+/**
+ * The travel modes a trip may use from each kind of starting location. A
+ * region or a country is too big to get around on foot or by bicycle.
+ */
+export const TRAVEL_MODES_BY_ORIGIN_KIND: Readonly<Record<OriginKind, readonly TravelMode[]>> = {
+  [OriginKind.EXACT]: [TravelMode.CAR, TravelMode.BICYCLE, TravelMode.TRANSIT, TravelMode.FOOT],
+  [OriginKind.CITY]: [TravelMode.CAR, TravelMode.BICYCLE, TravelMode.TRANSIT, TravelMode.FOOT],
+  [OriginKind.REGION]: [TravelMode.CAR, TravelMode.TRANSIT],
+  [OriginKind.COUNTRY]: [TravelMode.CAR, TravelMode.TRANSIT],
+};
 
 /** Where the starting location came from: a picked suggestion, or the device's position. */
 export enum OriginSource {
@@ -58,6 +88,13 @@ export interface TripOriginDto {
   viewport: GeoBoundsDto | null;
   /** OSM element, e.g. `way/749057185`, when known. */
   osmId: string | null;
+  /**
+   * The place's Wikidata item, e.g. `Q45`; always set for a region or a
+   * country (it is how they are searched), null when unknown otherwise.
+   */
+  wikidataId: string | null;
+  /** ISO 3166-1 alpha-2 code of the country the place is in, e.g. `PT`; null when unknown. */
+  countryCode: string | null;
 }
 
 /**
@@ -78,8 +115,11 @@ export interface TripFormStateDto {
   /** What the traveller likes, in their own words, normalized; null for none. */
   wish: string | null;
   timing: TripTimingDto;
-  /** The radius the search was sent with, kept so later rule changes don't alter it. */
-  searchRadiusMeters: number;
+  /**
+   * The radius the search was sent with, kept so later rule changes don't
+   * alter it. Null for a region or a country, searched inside its border.
+   */
+  searchRadiusMeters: number | null;
 }
 
 /**
