@@ -152,3 +152,13 @@ export interface CreateTripResponseDto {
   trip: TripDto;
   place: ListPlaceDto;
 }
+
+/**
+ * Body of `POST /trips/from-list`: makes one of the user's own lists (not
+ * Favorites) a trip with this form. The list's places and name stay; the
+ * list then shows only as the trip.
+ */
+export interface CreateTripFromListRequestDto {
+  listId: string;
+  form: TripFormStateDto;
+}
