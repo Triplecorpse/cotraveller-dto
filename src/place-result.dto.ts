@@ -8,7 +8,14 @@ import type { CategoryId } from './category-id.enum';
 export interface PlaceResultDto {
   /** The Geoapify place id: what the place is looked up and saved by. */
   providerPlaceId: string;
+  /** The name to show: in English when known, else the native one. */
   name: string;
+  /**
+   * The name as it's signposted where the place is, in its own language
+   * (e.g. "Castelul Peleș"), to show under `name`. Null when it's the
+   * same as `name` or unknown.
+   */
+  nativeName: string | null;
   formattedAddress: string | null;
   latitude: number;
   longitude: number;
