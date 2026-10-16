@@ -13,13 +13,12 @@ export interface PlaceResultDto {
   latitude: number;
   longitude: number;
   category: CategoryId | null;
-  rating: number | null;
-  userRatingsTotal: number | null;
   distanceMeters: number | null;
   /** The place's own website, when it has one. */
   websiteUrl: string | null;
   /** Permalink to the underlying OpenStreetMap element. */
   osmUrl: string | null;
+  /** The data's credit line (OpenStreetMap's licence asks for it), to show with the place. */
   attribution: string | null;
   /** The best available photo, or null if none was found — same as photoUrls[0]. */
   photoUrl: string | null;
@@ -37,8 +36,6 @@ export interface PlaceResultDto {
   countryCode: string | null;
   /** ISO 3166-2 subdivision (state/province), e.g. "DE-BY". Null when unknown. */
   regionCode: string | null;
-  /** The provider's own map page for this place (opens the Maps app on phones), if any. */
-  mapsUrl: string | null;
   /** Authors of `photoUrl` that must be credited wherever it's shown. Empty when none are required/known. */
   photoAuthors: PhotoAuthorDto[];
   /**
