@@ -31,6 +31,12 @@ export interface PlaceResultDto {
   photoUrl: string | null;
   /** Every candidate photo found across sources, in preference order. */
   photoUrls: string[];
+  /**
+   * True when the photos are still being looked up: `photoUrl`,
+   * `photoUrls` and `photoAuthors` are empty for now, and
+   * `POST /places/photos` gives them. False or missing: they are final.
+   */
+  photosPending?: boolean;
   /** Whether the place is open right now. Null when the provider has no hours data. */
   openNow: boolean | null;
   /** ISO 8601 timestamp of the next time it opens, if known. */
