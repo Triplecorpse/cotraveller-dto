@@ -73,6 +73,22 @@ export interface PlaceResultDto {
    * places saved or cached before it existed.
    */
   locality?: PlaceLocalityDto | null;
+  /**
+   * How big the place is, for a category where size matters (a
+   * playground): from its outline on OpenStreetMap and what is known
+   * about it. Null or missing when unknown or not such a category.
+   */
+  size?: PlaceSize | null;
+}
+
+/**
+ * A place's size among its kind, e.g. a courtyard sandbox (`small`) or an
+ * adventure playground (`large`).
+ */
+export enum PlaceSize {
+  SMALL = 'small',
+  MEDIUM = 'medium',
+  LARGE = 'large',
 }
 
 /** The town a place is in, or the towns it is near, and its country. */

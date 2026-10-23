@@ -19,6 +19,12 @@ export enum CategoryId {
   CAVE = 'cave',
   ZOO_AQUARIUM = 'zoo_aquarium',
   THEME_PARK = 'theme_park',
+  PLAYGROUND = 'playground',
+  WATER_PARK = 'water_park',
+  /** Climbing, rope and trampoline parks: Geoapify's `entertainment.activity_park`. */
+  ADVENTURE_PARK = 'adventure_park',
+  /** Hot springs and thermal (public) baths. */
+  HOT_SPRING = 'hot_spring',
   RESTAURANT = 'restaurant',
   CAFE = 'cafe',
   PETROL_STATION = 'petrol_station',

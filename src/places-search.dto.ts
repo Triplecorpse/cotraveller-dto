@@ -29,8 +29,19 @@ export interface PlacesSearchRequestDto {
   radiusMeters?: number | null;
   /** A region or a country to search inside instead of a radius. */
   area?: SearchAreaDto | null;
-  /** Category ids from `CategoryOptionDto.id`. */
+  /**
+   * Category ids from `CategoryOptionDto.id`. May be empty only with a
+   * `wish`, whose categories are then all that is searched for.
+   */
   categories: CategoryId[];
+  /**
+   * What the traveller would like, in their own words (signed-in users
+   * only): a model picks the catalog's categories that match it, and they
+   * are searched for as well as `categories`. Sent on a first page only;
+   * the next pages send the categories the first one answered
+   * (`PlacesSearchPageDto.wishCategories`) instead.
+   */
+  wish?: string | null;
   /**
    * `nextPageToken` from the previous page, to load more; omitted for a
    * fresh search.
@@ -51,6 +62,12 @@ export interface PlacesSearchPageDto {
    * there is nothing more to fetch.
    */
   nextPageToken: string | null;
+  /**
+   * With a `wish`: the categories it added to the request's, in the order
+   * they were searched. The next pages send `categories` with these
+   * appended, and no `wish`. Missing without a wish.
+   */
+  wishCategories?: CategoryId[] | null;
 }
 
 /** One starting-location suggestion from `GET /places/autocomplete`. */
