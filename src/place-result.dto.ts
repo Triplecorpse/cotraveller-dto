@@ -79,6 +79,13 @@ export interface PlaceResultDto {
    * about it. Null or missing when unknown or not such a category.
    */
   size?: PlaceSize | null;
+  /**
+   * Google's `place_id` for the place, when it was matched (cotraveller-back
+   * looks it up in the background after a search), so a Google Maps link
+   * opens the place's own card. Null or missing when not matched (yet):
+   * link to its coordinates instead.
+   */
+  googleId?: string | null;
 }
 
 /**
