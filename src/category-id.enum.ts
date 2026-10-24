@@ -1,8 +1,10 @@
 /**
  * Every category id (FR-007). The catalog (`CategoryOptionDto`, configured
  * by `CATEGORY_MAPPING`) may offer only some of them; stored rows and saved
- * trips keep the id they were made with, so a value is never removed —
- * a category taken out of the catalog stays here.
+ * trips keep the id they were made with, so a category taken out of the
+ * catalog stays here. A value goes only with a migration that clears it
+ * from every row: car parks went on 2026-10-24, as they are a service
+ * near a place (`ParkingDto`), not a place.
  */
 export enum CategoryId {
   MUSEUM = 'museum',
@@ -32,7 +34,6 @@ export enum CategoryId {
   LPG_STATION = 'lpg_station',
   CNG_STATION = 'cng_station',
   EV_CHARGING = 'ev_charging',
-  PARKING = 'parking',
   /**
    * Internal places' category for every fuel station, whichever fuel
    * category found it. Storage only: never in the catalog, never
