@@ -1,10 +1,39 @@
+import { ParkingKind } from './parking.dto';
 import { TravelMode } from './trip.dto';
 
 /**
- * The travel modes the trip builder plans for. Car and public transport
- * come later: they need parking and timetables.
+ * The travel modes the trip builder plans for. Public transport comes
+ * later: it needs timetables.
  */
-export const TRIP_PLAN_TRAVEL_MODES: readonly TravelMode[] = [TravelMode.FOOT, TravelMode.BICYCLE];
+export const TRIP_PLAN_TRAVEL_MODES: readonly TravelMode[] = [TravelMode.FOOT, TravelMode.BICYCLE, TravelMode.CAR];
+
+/** The vehicle a car trip goes in: how tall it is decides which car parks it fits. */
+export enum VehicleType {
+  CAR = 'car',
+  SUV = 'suv',
+  VAN = 'van',
+  CAMPER = 'camper',
+}
+
+/**
+ * How tall each vehicle is taken to be, in metres, against a car park's
+ * height limit (OSM `maxheight`). A little over the usual: a roof box
+ * or an aerial shouldn't scrape.
+ */
+export const VEHICLE_HEIGHT_METERS: Readonly<Record<VehicleType, number>> = {
+  [VehicleType.CAR]: 1.6,
+  [VehicleType.SUV]: 2.0,
+  [VehicleType.VAN]: 2.5,
+  [VehicleType.CAMPER]: 3.2,
+};
+
+/** Vehicles bigger than an SUV: a car park with no known height limit gets a warning for them. */
+export function isLargeVehicle(type: VehicleType): boolean {
+  return VEHICLE_HEIGHT_METERS[type] > VEHICLE_HEIGHT_METERS[VehicleType.SUV];
+}
+
+/** Farthest a car park may be from the place, in metres in a straight line: about a 6–7 minute walk. */
+export const TRIP_PLAN_CAR_PARK_METERS = 500;
 
 /** Most places one plan takes: the travel-time matrix is at most 31 × 31 with the start. */
 export const MAX_TRIP_PLAN_PLACES = 30;
@@ -26,6 +55,21 @@ export interface TripPlanSettingsDto {
   lunchStart: string;
   /** How long lunch takes, 0 to `MAX_TRIP_PLAN_LUNCH_MINUTES`; 0 for none. */
   lunchMinutes: number;
+  /**
+   * By car: drive to the nearest car park (within
+   * `TRIP_PLAN_CAR_PARK_METERS`) and walk the rest; a place with its own
+   * parking is driven to. Off: drive to each place. Ignored on foot and
+   * by bicycle.
+   */
+  parkNearby: boolean;
+  /**
+   * By car, with `parkNearby` only: the driver drops the group at the
+   * entrance, parks and walks back, and after the visit brings the car
+   * round to pick them up.
+   */
+  dropOffFirst: boolean;
+  /** By car: the vehicle, for car parks' height limits. */
+  vehicleType: VehicleType;
 }
 
 /** What the builder proposes when the traveller hasn't chosen yet. */
@@ -34,6 +78,9 @@ export const DEFAULT_TRIP_PLAN_SETTINGS: Readonly<TripPlanSettingsDto> = {
   dayEnd: '18:00',
   lunchStart: '13:00',
   lunchMinutes: 60,
+  parkNearby: true,
+  dropOffFirst: false,
+  vehicleType: VehicleType.CAR,
 };
 
 /** Why a place on the trip isn't in the plan. */
@@ -44,6 +91,56 @@ export enum TripPlanLeftOutReason {
   NO_TIME = 'no-time',
   /** It has no coordinates, so no way to it can be worked out. */
   NO_LOCATION = 'no-location',
+}
+
+/** How a car trip reaches a place. */
+export enum TripPlanArrival {
+  /** Driven to the place itself (car parks weren't asked for). */
+  ENTRANCE = 'entrance',
+  /** The place has its own parking: driven to it. */
+  OWN_PARKING = 'own-parking',
+  /** Parked at a car park nearby, then on foot (`parking`). */
+  CAR_PARK = 'car-park',
+  /** Dropped off at the entrance; the driver parks at `parking` (`driver`). */
+  DROP_OFF = 'drop-off',
+  /** No car park the vehicle fits within `TRIP_PLAN_CAR_PARK_METERS`: driven to the place. */
+  NO_CAR_PARK = 'no-car-park',
+}
+
+/** The car park a visit uses, and the walk between it and the place. */
+export interface TripPlanCarParkDto {
+  /** `ParkingDto.id`. */
+  parkingId: string;
+  /** Its name, else its operator's, else a plain one ("Car park"). */
+  name: string;
+  kind: ParkingKind | null;
+  /** Whether it charges; null when unknown. */
+  fee: boolean | null;
+  /** The price as OSM writes it, e.g. "2 EUR/hour". */
+  charge: string | null;
+  /** Spaces, when known. */
+  capacity: number | null;
+  /** Its height limit in metres, when known. */
+  maxHeightMeters: number | null;
+  /** The vehicle is bigger than an SUV and the car park's height limit is unknown: check before driving in. */
+  heightUnknown: boolean;
+  /** On foot between the car park and the place, one way: seconds and metres. */
+  walkSeconds: number;
+  walkMeters: number;
+  /** Where it is, `[longitude, latitude]`, for a map. */
+  location: [number, number];
+}
+
+/** With drop-off: what the driver does while the group visits. */
+export interface TripPlanDriverDto {
+  /** Driving from the entrance to the car park, seconds. */
+  parkSeconds: number;
+  /** Walking from the car park back to the place, seconds (and the same back to the car). */
+  walkSeconds: number;
+  /** When the driver joins the group, local `HH:mm`; null when the visit is too short to. */
+  joinsAt: string | null;
+  /** When the driver leaves to bring the car round, local `HH:mm`; null with `joinsAt`. */
+  leavesAt: string | null;
 }
 
 /** The way from one stop (or the start) to the next. */
@@ -84,8 +181,17 @@ export interface TripPlanStopDto {
    * dates, so no hours were checked.
    */
   hoursKnown: boolean | null;
-  /** The way here; null for the day's first stop when the day starts at it. */
+  /**
+   * The way here; null for the day's first stop when the day starts at it.
+   * By car it is the drive (to the car park when parked there).
+   */
   leg: TripPlanLegDto | null;
+  /** By car: how the place is reached; null on foot and by bicycle. */
+  arrival: TripPlanArrival | null;
+  /** By car, parked at or dropped off near a car park: that car park; null otherwise. */
+  parking: TripPlanCarParkDto | null;
+  /** By car with drop-off: what the driver does; null otherwise. */
+  driver: TripPlanDriverDto | null;
 }
 
 /** A lunch break between two visits. */
