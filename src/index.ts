@@ -13,3 +13,4 @@ export * from './data-source.enum';
 export * from './name-kind.enum';
 export * from './schedule-source.enum';
 export * from './parking.dto';
+export * from './trip-plan.dto';
