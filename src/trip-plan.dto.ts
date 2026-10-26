@@ -1,6 +1,7 @@
 import { ParkingKind } from './parking.dto';
 import type { OpeningPeriodDto } from './place-result.dto';
 import { TravelMode } from './trip.dto';
+import { COMFORT_WALK_TOLERANCE } from './user-settings.dto';
 
 /**
  * The travel modes the trip builder plans for. Public transport comes
@@ -38,26 +39,58 @@ export function isLargeVehicle(type: VehicleType): boolean {
  * line: ring after ring, the car parks in each walked to the place along
  * footpaths, the shortest walk kept. The search stops once no car park
  * farther off can be walked from in less (a walk is never shorter than
- * the straight line), or at the place's limit: `TRIP_PLAN_CAR_PARK_METERS`
- * where a road reaches it, the last ring where none does.
+ * the straight line), or at the place's limit: `carParkWalkMeters` where
+ * a road reaches it, the last ring (or the longest walk) where none does.
  */
 export const TRIP_PLAN_CAR_PARK_RINGS_METERS: readonly number[] = [
   500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000,
 ];
 
 /**
- * Where a road reaches the place: the farthest a car park is looked for,
- * in metres in a straight line, and the longest walk from it along
- * footpaths (about 13 minutes). Farther, the car goes to the place.
+ * Where a road reaches the place, for plans built before the traveller's
+ * walking settings (2026-10-26, `TripPlanDto.walks` absent): the farthest
+ * a car park was looked for and the longest walk from it. Since then
+ * `carParkWalkMeters`.
  */
 export const TRIP_PLAN_CAR_PARK_METERS = 1_000;
 
 /**
- * By car: a drive shorter than this, in metres, isn't taken — the group
- * walks to the next place and the car stays where it is, to be walked
- * back to before the next drive.
+ * By car, for plans built before the traveller's walking settings: a drive
+ * shorter than this was walked. Since then `walkBelowMeters`.
  */
 export const TRIP_PLAN_WALK_BELOW_METERS = 2_000;
+
+/**
+ * The walks a plan was built with: the traveller's settings
+ * (`UserSettingsDto`) when it was built.
+ */
+export interface TripPlanWalksDto {
+  /** The comfortable walk from where the car is left, in metres. */
+  comfortWalkMeters: number;
+  /** The longest walk planned, in metres; null for no limit. */
+  maxWalkMeters: number | null;
+}
+
+/**
+ * By car, where a road reaches the place: the farthest a car park is
+ * looked for (in a straight line) and the longest walk from it along
+ * footpaths — the comfortable walk and half again, never past the
+ * longest. Farther, the car goes to the place.
+ */
+export function carParkWalkMeters(walks: TripPlanWalksDto): number {
+  return Math.min(walks.comfortWalkMeters * COMFORT_WALK_TOLERANCE, walks.maxWalkMeters ?? Infinity);
+}
+
+/**
+ * By car: a drive shorter than this, in metres, isn't taken — the group
+ * walks to the next place and the car stays where it is, to be walked
+ * back to before the next drive. The comfortable walk, never past the
+ * longest. The car itself is moved once the place is more than
+ * `carParkWalkMeters` from it.
+ */
+export function walkBelowMeters(walks: TripPlanWalksDto): number {
+  return Math.min(walks.comfortWalkMeters, walks.maxWalkMeters ?? Infinity);
+}
 
 /** Most places one plan takes: the travel-time matrix is at most 31 × 31 with the start. */
 export const MAX_TRIP_PLAN_PLACES = 30;
@@ -115,6 +148,13 @@ export enum TripPlanLeftOutReason {
   NO_TIME = 'no-time',
   /** It has no coordinates, so no way to it can be worked out. */
   NO_LOCATION = 'no-location',
+  /**
+   * Farther on foot than the traveller's longest walk
+   * (`UserSettingsDto.maxWalkMeters`): on foot, from the hotel (or from
+   * every other place without one); by car, from every car park, no road
+   * reaching it.
+   */
+  TOO_FAR = 'too-far',
 }
 
 /** How a car trip reaches a place. */
@@ -127,19 +167,21 @@ export enum TripPlanArrival {
   CAR_PARK = 'car-park',
   /** Dropped off at the entrance; the driver parks at `parking` (`driver`). */
   DROP_OFF = 'drop-off',
-  /** No car park the vehicle fits within a walk of `TRIP_PLAN_CAR_PARK_METERS`: driven to the place. */
+  /** No car park the vehicle fits within a walk of `carParkWalkMeters`: driven to the place. */
   NO_CAR_PARK = 'no-car-park',
   /**
    * No road reaches the place (the car router finds no way to it, walking
    * does): parked at the car park the vehicle fits with the shortest walk,
-   * however far (`TRIP_PLAN_CAR_PARK_RINGS_METERS`), and the rest on foot; whatever
-   * the parking settings, as no one can be driven there. `parking` is
-   * null when none was found: check how to get there.
+   * however far (`TRIP_PLAN_CAR_PARK_RINGS_METERS`) up to the traveller's
+   * longest walk, and the rest on foot; whatever the parking settings, as
+   * no one can be driven there. `parking` is null when none was found
+   * (without a longest walk): check how to get there. With one, a place
+   * with no car park within it is left out (`TOO_FAR`).
    */
   NO_ROAD = 'no-road',
   /**
    * Walked from the place before: the drive would be shorter than
-   * `TRIP_PLAN_WALK_BELOW_METERS`, so the car stays where it is (`leg` is
+   * `walkBelowMeters`, so the car stays where it is (`leg` is
    * the walk).
    */
   ON_FOOT = 'on-foot',
@@ -337,6 +379,8 @@ export interface TripPlanDto {
   startsAtOrigin: boolean;
   /** Opening hours were checked: the trip has dates. */
   hoursChecked: boolean;
+  /** The walks it was built with; absent for plans built before 2026-10-26 (`TRIP_PLAN_CAR_PARK_METERS`). */
+  walks?: TripPlanWalksDto;
   /**
    * The trip changed since the plan was built: places added or removed,
    * or where, how or when edited. The plan is still shown, to be built
