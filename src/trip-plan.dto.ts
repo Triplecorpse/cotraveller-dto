@@ -39,8 +39,8 @@ export function isLargeVehicle(type: VehicleType): boolean {
  * line: ring after ring, the car parks in each walked to the place along
  * footpaths, the shortest walk kept. The search stops once no car park
  * farther off can be walked from in less (a walk is never shorter than
- * the straight line), or at the place's limit: `carParkWalkMeters` where
- * a road reaches it, the last ring (or the longest walk) where none does.
+ * the straight line), or at the traveller's longest walk
+ * (`carParkSearchMeters`) — the last ring when they set no limit.
  */
 export const TRIP_PLAN_CAR_PARK_RINGS_METERS: readonly number[] = [
   500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000,
@@ -50,7 +50,7 @@ export const TRIP_PLAN_CAR_PARK_RINGS_METERS: readonly number[] = [
  * Where a road reaches the place, for plans built before the traveller's
  * walking settings (2026-10-26, `TripPlanDto.walks` absent): the farthest
  * a car park was looked for and the longest walk from it. Since then
- * `carParkWalkMeters`.
+ * `carParkSearchMeters`.
  */
 export const TRIP_PLAN_CAR_PARK_METERS = 1_000;
 
@@ -72,12 +72,30 @@ export interface TripPlanWalksDto {
 }
 
 /**
- * By car, where a road reaches the place: the farthest a car park is
- * looked for (in a straight line) and the longest walk from it along
- * footpaths — the comfortable walk and half again, never past the
- * longest. Farther, the car goes to the place.
+ * By car: the farthest a car park is looked for (in a straight line) and
+ * walked from (along footpaths), in metres — the traveller's longest walk,
+ * or the last ring (`TRIP_PLAN_CAR_PARK_RINGS_METERS`) with no limit. The
+ * search goes ring by ring from the place and stops at the first that
+ * can't hold a shorter walk, so it usually ends near. A walk longer than
+ * the comfortable one is planned with a warning (`walkBeyondComfort`).
  */
-export function carParkWalkMeters(walks: TripPlanWalksDto): number {
+export function carParkSearchMeters(walks: TripPlanWalksDto): number {
+  const last = TRIP_PLAN_CAR_PARK_RINGS_METERS[TRIP_PLAN_CAR_PARK_RINGS_METERS.length - 1];
+  return Math.min(walks.maxWalkMeters ?? last, last);
+}
+
+/** A walk from a car park longer than the traveller's comfortable walk: the plan warns of it. */
+export function walkBeyondComfort(walkMeters: number, walks: TripPlanWalksDto): boolean {
+  return walkMeters > walks.comfortWalkMeters;
+}
+
+/**
+ * By car, between places: the car stays where it is while the next place
+ * is within this many metres of it, and the group walks — the comfortable
+ * walk and half again, never past the longest. Farther, the car is moved
+ * to the next car park.
+ */
+export function carMoveMeters(walks: TripPlanWalksDto): number {
   return Math.min(walks.comfortWalkMeters * COMFORT_WALK_TOLERANCE, walks.maxWalkMeters ?? Infinity);
 }
 
@@ -86,7 +104,7 @@ export function carParkWalkMeters(walks: TripPlanWalksDto): number {
  * walks to the next place and the car stays where it is, to be walked
  * back to before the next drive. The comfortable walk, never past the
  * longest. The car itself is moved once the place is more than
- * `carParkWalkMeters` from it.
+ * `carMoveMeters` from it.
  */
 export function walkBelowMeters(walks: TripPlanWalksDto): number {
   return Math.min(walks.comfortWalkMeters, walks.maxWalkMeters ?? Infinity);
@@ -167,7 +185,7 @@ export enum TripPlanArrival {
   CAR_PARK = 'car-park',
   /** Dropped off at the entrance; the driver parks at `parking` (`driver`). */
   DROP_OFF = 'drop-off',
-  /** No car park the vehicle fits within a walk of `carParkWalkMeters`: driven to the place. */
+  /** No car park the vehicle fits within the traveller's longest walk (`carParkSearchMeters`), or none open: driven to the place. */
   NO_CAR_PARK = 'no-car-park',
   /**
    * No road reaches the place (the car router finds no way to it, walking

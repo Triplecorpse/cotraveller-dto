@@ -14,16 +14,19 @@ export interface UserSettingsDto {
   lunchMinutes: number;
   /**
    * The comfortable walk from where the car is left to a place, in metres
-   * (`RECOMMENDED_COMFORT_WALK_METERS`). A walk up to
-   * `COMFORT_WALK_TOLERANCE` times this is still taken; longer, the car
-   * moves to another car park. A drive shorter than this is walked.
+   * (`RECOMMENDED_COMFORT_WALK_METERS`). A car park farther on foot is
+   * still taken when it has the shortest walk (up to `maxWalkMeters`), with
+   * a warning. Between places a drive shorter than this is walked, and the
+   * car stays while the place is within `COMFORT_WALK_TOLERANCE` times
+   * this of it; farther, it moves to another car park.
    */
   comfortWalkMeters: number;
   /**
    * The longest walk ever planned, in metres; null for no limit (for
-   * hikers). Places farther on foot are left out of a plan: on foot, more
-   * than this from the hotel (or from every other place without one); by
-   * car, more than this from any car park when no road reaches them.
+   * hikers). The car-park search goes no farther. Places farther on foot
+   * are left out of a plan: on foot, more than this from the hotel (or from
+   * every other place without one); by car, more than this from any car
+   * park when no road reaches them (a road's place is driven to instead).
    */
   maxWalkMeters: number | null;
 }
