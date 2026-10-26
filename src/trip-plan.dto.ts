@@ -136,10 +136,12 @@ export enum TripPlanArrival {
   ON_FOOT = 'on-foot',
 }
 
-/** A walk: seconds and metres on foot. */
+/** A walk: seconds and metres on foot, and its way for a map. */
 export interface TripPlanWalkDto {
   seconds: number;
   meters: number;
+  /** Along footpaths, as `[longitude, latitude]` points; null when the router didn't give it. */
+  geometry?: [number, number][] | null;
 }
 
 /** The car park a visit uses, and the walk between it and the place. */
@@ -164,6 +166,12 @@ export interface TripPlanCarParkDto {
   walkMeters: number;
   /** Where it is, `[longitude, latitude]`, for a map. */
   location: [number, number];
+  /**
+   * The walk from it to the place as `[longitude, latitude]` points, along
+   * footpaths, for a map (the way back is the same); null when the router
+   * didn't give it, or for plans built before 2026-10-26.
+   */
+  walkGeometry?: [number, number][] | null;
   /** Who runs it (OSM `operator`), e.g. "Q-Park". */
   operator: string | null;
   /** Spaces for disabled drivers. */
