@@ -1,4 +1,5 @@
 import { ParkingKind } from './parking.dto';
+import type { OpeningPeriodDto } from './place-result.dto';
 import { TravelMode } from './trip.dto';
 
 /**
@@ -34,6 +35,13 @@ export function isLargeVehicle(type: VehicleType): boolean {
 
 /** Farthest a car park may be from the place, in metres in a straight line: about a 6–7 minute walk. */
 export const TRIP_PLAN_CAR_PARK_METERS = 500;
+
+/**
+ * For a place no road reaches (a canyon, a summit): how far the nearest
+ * car park is looked for, in metres, ring after ring until one is found.
+ * Past the last, the place is planned without one (`NO_ROAD`).
+ */
+export const TRIP_PLAN_NO_ROAD_SEARCH_METERS: readonly number[] = [1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000];
 
 /** Most places one plan takes: the travel-time matrix is at most 31 × 31 with the start. */
 export const MAX_TRIP_PLAN_PLACES = 30;
@@ -105,6 +113,14 @@ export enum TripPlanArrival {
   DROP_OFF = 'drop-off',
   /** No car park the vehicle fits within `TRIP_PLAN_CAR_PARK_METERS`: driven to the place. */
   NO_CAR_PARK = 'no-car-park',
+  /**
+   * No road reaches the place (the car router finds no way to it, walking
+   * does): parked at the nearest car park the vehicle fits, however far
+   * (`TRIP_PLAN_NO_ROAD_SEARCH_METERS`), and the rest on foot; whatever
+   * the parking settings, as no one can be driven there. `parking` is
+   * null when none was found: check how to get there.
+   */
+  NO_ROAD = 'no-road',
 }
 
 /** The car park a visit uses, and the walk between it and the place. */
@@ -129,6 +145,22 @@ export interface TripPlanCarParkDto {
   walkMeters: number;
   /** Where it is, `[longitude, latitude]`, for a map. */
   location: [number, number];
+  /** Who runs it (OSM `operator`), e.g. "Q-Park". */
+  operator: string | null;
+  /** Spaces for disabled drivers. */
+  capacityDisabled: number | null;
+  /** Spaces with an EV charger. */
+  capacityCharging: number | null;
+  /** OSM's `maxstay` as written, e.g. "2 hours". */
+  maxStay: string | null;
+  /** A park and ride. */
+  parkAndRide: boolean | null;
+  /** The weekly hours as open/close periods, in its local time. Empty when unknown (most car parks). */
+  openingPeriods: OpeningPeriodDto[];
+  /** Permalink to the OpenStreetMap element. */
+  osmUrl: string;
+  /** The data's credit line (OpenStreetMap's licence asks for it). */
+  attribution: string;
 }
 
 /** With drop-off: what the driver does while the group visits. */
