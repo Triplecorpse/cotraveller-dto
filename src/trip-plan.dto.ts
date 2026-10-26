@@ -33,8 +33,24 @@ export function isLargeVehicle(type: VehicleType): boolean {
   return VEHICLE_HEIGHT_METERS[type] > VEHICLE_HEIGHT_METERS[VehicleType.SUV];
 }
 
-/** Farthest a car park may be from the place, in metres in a straight line: about a 6–7 minute walk. */
-export const TRIP_PLAN_CAR_PARK_METERS = 500;
+/**
+ * How car parks are looked for around a place, in metres in a straight
+ * line: ring after ring, the car parks in each walked to the place along
+ * footpaths, the shortest walk kept. The search stops once no car park
+ * farther off can be walked from in less (a walk is never shorter than
+ * the straight line), or at the place's limit: `TRIP_PLAN_CAR_PARK_METERS`
+ * where a road reaches it, the last ring where none does.
+ */
+export const TRIP_PLAN_CAR_PARK_RINGS_METERS: readonly number[] = [
+  500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000,
+];
+
+/**
+ * Where a road reaches the place: the farthest a car park is looked for,
+ * in metres in a straight line, and the longest walk from it along
+ * footpaths (about 13 minutes). Farther, the car goes to the place.
+ */
+export const TRIP_PLAN_CAR_PARK_METERS = 1_000;
 
 /**
  * By car: a drive shorter than this, in metres, isn't taken — the group
@@ -42,13 +58,6 @@ export const TRIP_PLAN_CAR_PARK_METERS = 500;
  * back to before the next drive.
  */
 export const TRIP_PLAN_WALK_BELOW_METERS = 2_000;
-
-/**
- * For a place no road reaches (a canyon, a summit): how far the nearest
- * car park is looked for, in metres, ring after ring until one is found.
- * Past the last, the place is planned without one (`NO_ROAD`).
- */
-export const TRIP_PLAN_NO_ROAD_SEARCH_METERS: readonly number[] = [1_000, 2_000, 4_000, 8_000, 16_000, 32_000, 64_000];
 
 /** Most places one plan takes: the travel-time matrix is at most 31 × 31 with the start. */
 export const MAX_TRIP_PLAN_PLACES = 30;
@@ -71,9 +80,9 @@ export interface TripPlanSettingsDto {
   /** How long lunch takes, 0 to `MAX_TRIP_PLAN_LUNCH_MINUTES`; 0 for none. */
   lunchMinutes: number;
   /**
-   * By car: drive to the nearest car park (within
-   * `TRIP_PLAN_CAR_PARK_METERS`) and walk the rest; a place with its own
-   * parking is driven to. Off: drive to each place. Ignored on foot and
+   * By car: drive to the car park with the shortest walk to the place
+   * (`TRIP_PLAN_CAR_PARK_RINGS_METERS`) and walk the rest; a place with its
+   * own parking is driven to. Off: drive to each place. Ignored on foot and
    * by bicycle.
    */
   parkNearby: boolean;
@@ -118,12 +127,12 @@ export enum TripPlanArrival {
   CAR_PARK = 'car-park',
   /** Dropped off at the entrance; the driver parks at `parking` (`driver`). */
   DROP_OFF = 'drop-off',
-  /** No car park the vehicle fits within `TRIP_PLAN_CAR_PARK_METERS`: driven to the place. */
+  /** No car park the vehicle fits within a walk of `TRIP_PLAN_CAR_PARK_METERS`: driven to the place. */
   NO_CAR_PARK = 'no-car-park',
   /**
    * No road reaches the place (the car router finds no way to it, walking
-   * does): parked at the nearest car park the vehicle fits, however far
-   * (`TRIP_PLAN_NO_ROAD_SEARCH_METERS`), and the rest on foot; whatever
+   * does): parked at the car park the vehicle fits with the shortest walk,
+   * however far (`TRIP_PLAN_CAR_PARK_RINGS_METERS`), and the rest on foot; whatever
    * the parking settings, as no one can be driven there. `parking` is
    * null when none was found: check how to get there.
    */
@@ -161,9 +170,21 @@ export interface TripPlanCarParkDto {
   maxHeightMeters: number | null;
   /** The vehicle is bigger than an SUV and the car park's height limit is unknown: check before driving in. */
   heightUnknown: boolean;
-  /** On foot between the car park and the place, one way: seconds and metres. */
+  /**
+   * On foot from the car park to the place: seconds and metres. The
+   * router's time counts the climb; the walk back to the car (`toCar`,
+   * `returnToCar`) is timed the other way, downhill where this is uphill.
+   */
   walkSeconds: number;
   walkMeters: number;
+  /**
+   * Metres climbed on the way from the car park to the place, when the
+   * router gave the walk's heights; null otherwise and for plans built
+   * before 2026-10-26.
+   */
+  walkClimbMeters?: number | null;
+  /** At the start of a marked hiking trail, or by a trailhead (OSM): where hikers park. */
+  trailhead?: boolean;
   /** Where it is, `[longitude, latitude]`, for a map. */
   location: [number, number];
   /**
