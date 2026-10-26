@@ -37,6 +37,13 @@ export function isLargeVehicle(type: VehicleType): boolean {
 export const TRIP_PLAN_CAR_PARK_METERS = 500;
 
 /**
+ * By car: a drive shorter than this, in metres, isn't taken — the group
+ * walks to the next place and the car stays where it is, to be walked
+ * back to before the next drive.
+ */
+export const TRIP_PLAN_WALK_BELOW_METERS = 2_000;
+
+/**
  * For a place no road reaches (a canyon, a summit): how far the nearest
  * car park is looked for, in metres, ring after ring until one is found.
  * Past the last, the place is planned without one (`NO_ROAD`).
@@ -121,6 +128,18 @@ export enum TripPlanArrival {
    * null when none was found: check how to get there.
    */
   NO_ROAD = 'no-road',
+  /**
+   * Walked from the place before: the drive would be shorter than
+   * `TRIP_PLAN_WALK_BELOW_METERS`, so the car stays where it is (`leg` is
+   * the walk).
+   */
+  ON_FOOT = 'on-foot',
+}
+
+/** A walk: seconds and metres on foot. */
+export interface TripPlanWalkDto {
+  seconds: number;
+  meters: number;
 }
 
 /** The car park a visit uses, and the walk between it and the place. */
@@ -224,6 +243,14 @@ export interface TripPlanStopDto {
   parking: TripPlanCarParkDto | null;
   /** By car with drop-off: what the driver does; null otherwise. */
   driver: TripPlanDriverDto | null;
+  /**
+   * By car, before this stop's drive: the walk from the place before back
+   * to the car — to its car park, or farther back when the places between
+   * were walked to. Null when there is no walk (the car is at the place
+   * before, or the day starts here). Absent from plans built before
+   * 2026-10-26, which show the walk back to the car after each visit.
+   */
+  toCar?: TripPlanWalkDto | null;
 }
 
 /** A lunch break between two visits. */
@@ -251,6 +278,10 @@ export interface TripPlanDayDto {
   lunch: TripPlanLunchDto | null;
   /** The way back to the trip's starting address; null when the day doesn't return there. */
   returnLeg: TripPlanLegDto | null;
+  /** The way back is on foot: the car stayed at the start, and the day was walked. Absent: false. */
+  returnOnFoot?: boolean;
+  /** By car, before the way back: the walk to the car, as `TripPlanStopDto.toCar`. */
+  returnToCar?: TripPlanWalkDto | null;
 }
 
 /** A place left out of the plan, and why. */
