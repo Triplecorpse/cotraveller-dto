@@ -179,7 +179,13 @@ export enum TripPlanLeftOutReason {
 export enum TripPlanArrival {
   /** Driven to the place itself (car parks weren't asked for). */
   ENTRANCE = 'entrance',
-  /** The place has its own parking: driven to it. */
+  /**
+   * The place has parking of its own: driven to it. When its car park is
+   * known (a customers' car park in or by its outline, or one it is
+   * tagged with) the drive ends there and `parking` is it, with the walk
+   * to the entrance; otherwise `parking` is null and the drive ends at
+   * the place.
+   */
   OWN_PARKING = 'own-parking',
   /** Parked at a car park nearby, then on foot (`parking`). */
   CAR_PARK = 'car-park',
@@ -296,6 +302,21 @@ export interface TripPlanLegDto {
   geometry: [number, number][] | null;
 }
 
+/**
+ * A place seen from the car: the roads driven inside it, as OSM maps
+ * them, then (by car) its car park for the part on foot (`parking`).
+ */
+export interface TripPlanDriveThroughDto {
+  /**
+   * The roads a car may drive inside the place, as `[longitude, latitude]`
+   * lines, joined where they meet; empty when OSM maps none (or by
+   * bicycle and on foot, where they aren't looked up).
+   */
+  roads: [number, number][][];
+  /** How long those roads are, in metres; 0 with none. */
+  meters: number;
+}
+
 /** One visit in a day's plan. */
 export interface TripPlanStopDto {
   /** The trip place (`ListPlaceDto.id`). */
@@ -328,8 +349,18 @@ export interface TripPlanStopDto {
   leg: TripPlanLegDto | null;
   /** By car: how the place is reached; null on foot and by bicycle. */
   arrival: TripPlanArrival | null;
-  /** By car, parked at or dropped off near a car park: that car park; null otherwise. */
+  /**
+   * By car, parked at or dropped off near a car park — the place's own
+   * one too (`OWN_PARKING`) — that car park; null otherwise.
+   */
   parking: TripPlanCarParkDto | null;
+  /**
+   * The place is seen from the car (OSM `drive_through=yes`: a safari
+   * park, a drive-through); null for one that isn't, and absent from
+   * plans built before 2026-10-28. In every travel mode, so the page can
+   * say part of it is by car only.
+   */
+  driveThrough?: TripPlanDriveThroughDto | null;
   /** By car with drop-off: what the driver does; null otherwise. */
   driver: TripPlanDriverDto | null;
   /**

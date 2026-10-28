@@ -10,7 +10,7 @@ export enum DataSource {
   GEOAPIFY = 'geoapify',
   WIKIDATA = 'wikidata',
   WIKIPEDIA = 'wikipedia',
-  /** Open-Meteo's elevation API (Copernicus DEM, about 90 m). */
+  /** Open-Meteo's elevation API (Copernicus DEM, about 90 m); no longer asked (2026-10-28), the value stays. */
   OPEN_METEO = 'open_meteo',
   /** The venue's own website. */
   WEBSITE = 'website',
