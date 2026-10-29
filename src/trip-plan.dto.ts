@@ -1,5 +1,6 @@
 import { ParkingKind } from './parking.dto';
 import type { OpeningPeriodDto } from './place-result.dto';
+import { PublicHolidayHours } from './public-holiday-hours.enum';
 import { TravelMode } from './trip.dto';
 import { COMFORT_WALK_TOLERANCE } from './user-settings.dto';
 
@@ -348,6 +349,12 @@ export interface TripPlanStopDto {
    * dates, so no hours were checked.
    */
   hoursKnown: boolean | null;
+  /**
+   * What the place's hours source says about public holidays; null when
+   * it says nothing, so on a holiday its hours may differ from the ones
+   * planned with. Absent from plans built before 2026-10-29: unknown.
+   */
+  publicHolidays?: PublicHolidayHours | null;
   /**
    * The way here; null for the day's first stop when the day starts at it.
    * By car it is the drive (to the car park when parked there).

@@ -13,6 +13,7 @@ export * from './data-source.enum';
 export * from './name-kind.enum';
 export * from './place-entrance-kind.enum';
 export * from './schedule-source.enum';
+export * from './public-holiday-hours.enum';
 export * from './parking.dto';
 export * from './trip-plan.dto';
 export * from './user-settings.dto';
