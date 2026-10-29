@@ -467,3 +467,66 @@ export interface TripPlanDto {
 export interface BuildTripPlanRequestDto {
   settings: TripPlanSettingsDto;
 }
+
+/** Where a trip plan's build stands: it is queued and built by a worker. */
+export enum TripPlanBuildStatus {
+  /** Waiting for the worker. */
+  Pending = 'pending',
+  /** Being built: see its `stage`. */
+  Running = 'running',
+  /** Built: `GET /trips/:tripId/plan` answers it. */
+  Done = 'done',
+  /** Stopped by an error (`error` says why); the trip can be built again. */
+  Failed = 'failed',
+}
+
+/** What a running build is doing, in order. */
+export enum TripPlanBuildStage {
+  /** Reading the places: where they are, their outlines and entrances. */
+  Places = 'places',
+  /** Reading opening hours our tables lack for the trip's dates. */
+  Hours = 'hours',
+  /** Working out the ways between places, the car parks and the days. */
+  Routes = 'routes',
+  /** Keeping the plan. */
+  Saving = 'saving',
+}
+
+/** What `POST /trips/:tripId/plan` did. */
+export enum TripPlanBuildStartOutcome {
+  /** A new build was queued. */
+  Started = 'started',
+  /** The trip already has a build waiting or at work: that one is returned. */
+  Running = 'running',
+}
+
+/**
+ * One build of a trip's plan, as the user's "Trip plans" page and the trip
+ * builder show it. Response of `GET /plan-builds`, `GET /trips/:tripId/plan/build`.
+ */
+export interface TripPlanBuildDto {
+  id: string;
+  tripId: string;
+  /** The trip's name when the build was asked for; kept after the trip is removed. */
+  tripName: string;
+  /** Whether the trip still exists (its plan can be opened). */
+  tripExists: boolean;
+  status: TripPlanBuildStatus;
+  /** What a running build is doing; null otherwise. */
+  stage: TripPlanBuildStage | null;
+  /** Places planned; null until the build knows. */
+  places: number | null;
+  /** Why it failed, in words for the traveller. */
+  error: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** When the email saying it ended was sent; null before, or when none could be. */
+  emailedAt: string | null;
+}
+
+/** Response of `POST /trips/:tripId/plan` (202). */
+export interface StartTripPlanBuildResponseDto {
+  outcome: TripPlanBuildStartOutcome;
+  build: TripPlanBuildDto;
+}
