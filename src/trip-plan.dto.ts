@@ -332,6 +332,12 @@ export interface TripPlanStopDto {
   /** The visit is shorter than the place deserves: a day isn't long enough for it. */
   shortened: boolean;
   /**
+   * Minutes taken off the visit to condense its day
+   * (`TripPlanDayDto.condensed`); 0 for none. Absent from plans built
+   * before 2026-10-29.
+   */
+  trimmedMinutes?: number;
+  /**
    * Lunch is taken during this visit (a long one, such as a zoo); `leave`
    * includes it.
    */
@@ -402,6 +408,14 @@ export interface TripPlanDayDto {
   returnOnFoot?: boolean;
   /** By car, before the way back: the walk to the car, as `TripPlanStopDto.toCar`. */
   returnToCar?: TripPlanWalkDto | null;
+  /**
+   * The day is condensed so its places share it rather than the road to
+   * them being driven on two days: lunch shorter than the settings' (the
+   * `lunch` itself says how long), an `end` up to 45 min after the
+   * settings' `dayEnd`, visits shorter (`TripPlanStopDto.trimmedMinutes`).
+   * Only from a hotel. Absent from plans built before 2026-10-29: false.
+   */
+  condensed?: boolean;
 }
 
 /** A place left out of the plan, and why. */
