@@ -2,7 +2,7 @@ import { DEFAULT_DAY_HOURS, type DayHoursDto } from './day-hours.dto';
 import { ParkingKind } from './parking.dto';
 import type { OpeningPeriodDto } from './place-result.dto';
 import { PublicHolidayHours } from './public-holiday-hours.enum';
-import { TravelMode } from './trip.dto';
+import { TravelMode, type TripTimingDto } from './trip.dto';
 import { COMFORT_WALK_TOLERANCE } from './user-settings.dto';
 
 /**
@@ -380,6 +380,19 @@ export interface TripPlanStopDto {
    * 2026-10-26, which show the walk back to the car after each visit.
    */
   toCar?: TripPlanWalkDto | null;
+  /**
+   * Placed by hand on the calendar (dropped, moved or resized): Auto, for
+   * the trip or the day, leaves it exactly as it is. To let Auto plan it
+   * again, the traveller moves it back to the list.
+   */
+  manual: boolean;
+  /**
+   * The time the traveller asked for, local `HH:mm`, for a stop placed by
+   * hand; null otherwise. `arrive` is later when the way from the place
+   * before doesn't fit: the page warns of it, and the stop goes back to this
+   * time once the way allows.
+   */
+  askedStart: string | null;
 }
 
 /** A lunch break between two visits. */
@@ -438,6 +451,16 @@ export interface TripPlanDayDto {
   sunrise?: string | null;
   /** Sunset, as `sunrise`. */
   sunset?: string | null;
+  /**
+   * Sunrise averaged across this day's places (each in its own time zone),
+   * local `HH:mm`, for the calendar; across all the trip's places for an empty
+   * day. Null when none has one. Absent from plans built before 2026-10-31.
+   */
+  averageSunrise?: string | null;
+  /** Sunset, as `averageSunrise`. */
+  averageSunset?: string | null;
+  /** How many places the average is of, for the page to say so. */
+  sunPlaces?: number;
 }
 
 /** A place left out of the plan, and why. */
@@ -474,6 +497,8 @@ export interface TripPlanDto {
   stale: boolean;
   /** ISO 8601. */
   builtAt: string;
+  /** Some stop is placed by hand (`TripPlanStopDto.manual`): the page offers Verify. */
+  manual: boolean;
   days: TripPlanDayDto[];
   leftOut: TripPlanLeftOutDto[];
 }
@@ -481,6 +506,111 @@ export interface TripPlanDto {
 /** Body of `POST /trips/:tripId/plan`. */
 export interface BuildTripPlanRequestDto {
   settings: TripPlanSettingsDto;
+}
+
+/** One visit as the calendar has it. */
+export interface TripPlanArrangedStopDto {
+  /** The trip place (`ListPlaceDto.id`). */
+  listPlaceId: string;
+  /** When the visit is to start, local `HH:mm`: the time asked for when placed by hand. */
+  start: string;
+  /** How long the visit is, in minutes. */
+  visitMinutes: number;
+  /** Placed by hand: Auto leaves it alone. */
+  manual: boolean;
+}
+
+/** A day as the calendar has it. */
+export interface TripPlanArrangedDayDto {
+  /** 1 for the first day. */
+  day: number;
+  /** Where the day's lunch is; null for none. A grey zone: visits are not moved out of it. */
+  lunch: { start: string; minutes: number } | null;
+  stops: TripPlanArrangedStopDto[];
+}
+
+/**
+ * Body of `PUT /trips/:tripId/plan/arrangement` and
+ * `POST /trips/:tripId/plan/days/:day/auto`: the whole calendar, every day
+ * of it, so sending it twice comes to the same plan.
+ */
+export interface ArrangeTripPlanRequestDto {
+  settings: TripPlanSettingsDto;
+  days: TripPlanArrangedDayDto[];
+  /** The trip's new "When?" answer, when a day was added or removed; null otherwise. */
+  timing: TripTimingDto | null;
+}
+
+/** What arranging came to. */
+export enum TripPlanArrangeOutcome {
+  /** Worked out and kept: `plan` is the answer. */
+  Arranged = 'arranged',
+  /**
+   * The ways and visit lengths of some place aren't worked out yet: a
+   * preparation is queued (`build`). The page sends the calendar again when
+   * it ends.
+   */
+  Preparing = 'preparing',
+}
+
+/** Response of `PUT /trips/:tripId/plan/arrangement` and `POST /trips/:tripId/plan/days/:day/auto`. */
+export type ArrangeTripPlanResponseDto =
+  | { outcome: TripPlanArrangeOutcome.Arranged; plan: TripPlanDto }
+  | { outcome: TripPlanArrangeOutcome.Preparing; build: TripPlanBuildDto };
+
+/** A day's sun, known without a plan. */
+export interface TripPlanCalendarDayDto {
+  /** 1 for the first day. */
+  day: number;
+  /** The calendar date for a trip with dates; null otherwise (the sun is today's). */
+  date: string | null;
+  /** Where day times set from the sun are measured, local `HH:mm`; null without one. */
+  sunrise: string | null;
+  sunset: string | null;
+  /** Averaged across the trip's places, as `TripPlanDayDto.averageSunrise`. */
+  averageSunrise: string | null;
+  averageSunset: string | null;
+  sunPlaces: number;
+}
+
+/** Response of `GET /trips/:tripId/plan/calendar`: the sun of the trip's days, before any plan. No provider call. */
+export interface TripPlanCalendarDto {
+  days: TripPlanCalendarDayDto[];
+}
+
+/** What Verify found wrong with a visit. */
+export enum TripPlanIssueKind {
+  /** The place is closed on the visit's date. */
+  CLOSED_DAY = 'closed-day',
+  /** The place is open that date, but not for the whole visit (`open` says when). */
+  OUTSIDE_HOURS = 'outside-hours',
+  /** The place's hours for that date aren't known. */
+  UNKNOWN_HOURS = 'unknown-hours',
+  /** The place is closed for now, whatever the date: for a trip without dates. */
+  CLOSED_PLACE = 'closed-place',
+}
+
+/** One thing Verify found. */
+export interface TripPlanIssueDto {
+  listPlaceId: string;
+  /** 1 for the first day. */
+  day: number;
+  /** The visit's date; null without dates. */
+  date: string | null;
+  kind: TripPlanIssueKind;
+  /** When the place is open that date, as local `HH:mm` pairs; empty when closed or unknown. */
+  open: [string, string][];
+}
+
+/** Response of `POST /trips/:tripId/plan/verify`. Public holidays are the page's (`TripPlanStopDto.publicHolidays`). */
+export interface TripPlanVerificationDto {
+  /** ISO 8601. */
+  checkedAt: string;
+  /** Hours were checked: the trip has dates. */
+  hoursChecked: boolean;
+  /** How many visits were checked. */
+  checked: number;
+  issues: TripPlanIssueDto[];
 }
 
 /** Where a trip plan's build stands: it is queued and built by a worker. */

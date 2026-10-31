@@ -70,6 +70,64 @@ export function clockMinutes(time: string): number | null {
   return match ? Number(match[1]) * 60 + Number(match[2]) : null;
 }
 
+/** Sunrise and sunset in minutes after local midnight; null when the sun doesn't rise or set that day (polar night, midnight sun). */
+export interface SunMinutes {
+  sunrise: number | null;
+  sunset: number | null;
+}
+
+/** A day's hours as minutes after local midnight, worked out for its date. */
+export interface DayHoursMinutes {
+  /** The comfortable day: what the plan keeps to. */
+  dayStart: number;
+  dayEnd: number;
+  /** The limits: the day never starts before or is over after these. */
+  maxStart: number;
+  maxEnd: number;
+  lunchStart: number;
+  lunchMinutes: number;
+}
+
+/**
+ * Times from the sun are rounded to this many minutes. It reads better, and
+ * dates a few days apart then plan alike (the backend plans equal days once),
+ * where the sun's minute a day would make every date its own.
+ */
+const SUN_ROUNDING_MINUTES = 5;
+const DAY_MINUTES = 24 * 60;
+
+/**
+ * A day's hours as minutes on a date with these sun times. The limits are
+ * never passed, so a comfortable time the sun puts outside them moves to the
+ * limit. With no sunrise or sunset that day, the proposed day's time stands
+ * in. Cotraveller-back and the calendar use this one working out.
+ */
+export function resolveDayHours(hours: DayHoursDto, sun: SunMinutes): DayHoursMinutes {
+  const at = (time: DayTimeDto, fallback: DayTimeDto): number => {
+    if (time.kind === DayTimeKind.EXACT) {
+      return clockMinutes(time.time) as number;
+    }
+    const base = time.kind === DayTimeKind.SUNRISE ? sun.sunrise : sun.sunset;
+    if (base === null) {
+      return clockMinutes(fallback.time) as number;
+    }
+    const rounded = Math.round((base + time.offsetMinutes) / SUN_ROUNDING_MINUTES) * SUN_ROUNDING_MINUTES;
+    return Math.min(DAY_MINUTES, Math.max(0, rounded));
+  };
+  const maxStart = at(hours.maxStart, DEFAULT_DAY_HOURS.maxStart);
+  const maxEnd = Math.max(maxStart, at(hours.maxEnd, DEFAULT_DAY_HOURS.maxEnd));
+  const dayStart = Math.min(maxEnd, Math.max(maxStart, at(hours.comfortStart, DEFAULT_DAY_HOURS.comfortStart)));
+  const dayEnd = Math.max(dayStart, Math.min(maxEnd, at(hours.comfortEnd, DEFAULT_DAY_HOURS.comfortEnd)));
+  return {
+    dayStart,
+    dayEnd,
+    maxStart,
+    maxEnd,
+    lunchStart: clockMinutes(hours.lunchStart) as number,
+    lunchMinutes: hours.lunchMinutes,
+  };
+}
+
 /**
  * How many minutes `later` is after `earlier` when that can be told without
  * a date: both on the clock, or both from the same sun event. Null otherwise
