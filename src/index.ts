@@ -15,6 +15,7 @@ export * from './place-entrance-kind.enum';
 export * from './schedule-source.enum';
 export * from './public-holiday-hours.enum';
 export * from './parking.dto';
+export * from './day-hours.dto';
 export * from './trip-plan.dto';
 export * from './user-settings.dto';
 export * from './service-status.dto';

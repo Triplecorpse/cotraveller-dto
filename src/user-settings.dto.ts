@@ -1,17 +1,11 @@
+import { DEFAULT_DAY_HOURS, type DayHoursDto } from './day-hours.dto';
+
 /**
  * The traveller's own settings, kept with their account
  * (`GET`/`PATCH /settings`): their usual day, and how far they like to
  * walk. The trip builder proposes the day; the walks shape every plan.
  */
-export interface UserSettingsDto {
-  /** When the traveller likes the day to start, local `HH:mm`, e.g. `09:00`. */
-  dayStart: string;
-  /** When the day is over, local `HH:mm`, e.g. `18:00`. */
-  dayEnd: string;
-  /** When lunch should start, local `HH:mm`, e.g. `13:00`. */
-  lunchStart: string;
-  /** How long lunch takes, in minutes, 0 to `MAX_TRIP_PLAN_LUNCH_MINUTES`; 0 for none. */
-  lunchMinutes: number;
+export interface UserSettingsDto extends DayHoursDto {
   /**
    * The comfortable walk from where the car is left to a place, in metres
    * (`RECOMMENDED_COMFORT_WALK_METERS`). A car park farther on foot is
@@ -48,10 +42,7 @@ export const MAX_WALK_LIMIT_METERS = 100_000;
 
 /** A traveller's settings before they change any: the trip builder's proposed day, the recommended walks. */
 export const DEFAULT_USER_SETTINGS: Readonly<UserSettingsDto> = {
-  dayStart: '09:00',
-  dayEnd: '18:00',
-  lunchStart: '13:00',
-  lunchMinutes: 60,
+  ...DEFAULT_DAY_HOURS,
   comfortWalkMeters: RECOMMENDED_COMFORT_WALK_METERS,
   maxWalkMeters: null,
 };

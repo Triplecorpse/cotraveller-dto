@@ -1,3 +1,4 @@
+import { DEFAULT_DAY_HOURS, type DayHoursDto } from './day-hours.dto';
 import { ParkingKind } from './parking.dto';
 import type { OpeningPeriodDto } from './place-result.dto';
 import { PublicHolidayHours } from './public-holiday-hours.enum';
@@ -114,23 +115,20 @@ export function walkBelowMeters(walks: TripPlanWalksDto): number {
 /** Most places one plan takes: the travel-time matrix is at most 31 × 31 with the start. */
 export const MAX_TRIP_PLAN_PLACES = 30;
 
-/** Longest lunch break the builder accepts, in minutes. */
-export const MAX_TRIP_PLAN_LUNCH_MINUTES = 180;
+/** One day of the trip with hours of its own. */
+export interface TripPlanDayHoursDto {
+  /** 1 for the first day. */
+  day: number;
+  hours: DayHoursDto;
+}
 
 /**
- * What the traveller asks of each day: when it starts and ends, and the
- * lunch break, all as local `HH:mm` at the destination. The day starts
- * before lunch, and lunch ends before the day does.
+ * What the traveller asks of the plan: the hours of every day (the settings
+ * themselves), the days with hours of their own, and by car how to park.
  */
-export interface TripPlanSettingsDto {
-  /** When the first visit (or the way to it) starts, e.g. `09:00`. */
-  dayStart: string;
-  /** When the day is over, the way back to the start included, e.g. `18:00`. */
-  dayEnd: string;
-  /** When lunch should start, e.g. `13:00`; it moves to the visit boundary closest to it. */
-  lunchStart: string;
-  /** How long lunch takes, 0 to `MAX_TRIP_PLAN_LUNCH_MINUTES`; 0 for none. */
-  lunchMinutes: number;
+export interface TripPlanSettingsDto extends DayHoursDto {
+  /** The days set apart from the others, each at most once; the rest use these settings' hours. */
+  days: TripPlanDayHoursDto[];
   /**
    * By car: drive to the car park with the shortest walk to the place
    * (`TRIP_PLAN_CAR_PARK_RINGS_METERS`) and walk the rest; a place with its
@@ -150,10 +148,8 @@ export interface TripPlanSettingsDto {
 
 /** What the builder proposes when the traveller hasn't chosen yet. */
 export const DEFAULT_TRIP_PLAN_SETTINGS: Readonly<TripPlanSettingsDto> = {
-  dayStart: '09:00',
-  dayEnd: '18:00',
-  lunchStart: '13:00',
-  lunchMinutes: 60,
+  ...DEFAULT_DAY_HOURS,
+  days: [],
   parkNearby: true,
   dropOffFirst: false,
   vehicleType: VehicleType.CAR,
@@ -396,6 +392,14 @@ export interface TripPlanLunchDto {
   afterStops: number;
 }
 
+/** A day's hours worked out for its date, as local `HH:mm`, rounded to 5 minutes where they come from the sun. */
+export interface TripPlanDayWindowDto {
+  comfortStart: string;
+  comfortEnd: string;
+  maxStart: string;
+  maxEnd: string;
+}
+
 /** One day of the plan. */
 export interface TripPlanDayDto {
   /** 1 for the first day. */
@@ -418,11 +422,22 @@ export interface TripPlanDayDto {
   /**
    * The day is condensed so its places share it rather than the road to
    * them being driven on two days: lunch shorter than the settings' (the
-   * `lunch` itself says how long), an `end` up to 45 min after the
-   * settings' `dayEnd`, visits shorter (`TripPlanStopDto.trimmedMinutes`).
-   * Only from a hotel. Absent from plans built before 2026-10-29: false.
+   * `lunch` itself says how long), a day longer than the comfortable one
+   * (within `window`'s limits), visits shorter
+   * (`TripPlanStopDto.trimmedMinutes`). Only from a hotel. Absent from plans
+   * built before 2026-10-29: false.
    */
   condensed?: boolean;
+  /** The hours this day was planned with; absent from plans built before 2026-10-31. */
+  window?: TripPlanDayWindowDto;
+  /**
+   * Sunrise where the trip is on this day, local `HH:mm`; null when the sun
+   * doesn't rise (polar night, midnight sun). Worked out for the build's
+   * date on a trip without dates. Absent from plans built before 2026-10-31.
+   */
+  sunrise?: string | null;
+  /** Sunset, as `sunrise`. */
+  sunset?: string | null;
 }
 
 /** A place left out of the plan, and why. */
