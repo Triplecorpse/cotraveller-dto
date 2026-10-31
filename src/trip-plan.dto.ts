@@ -5,11 +5,8 @@ import { PublicHolidayHours } from './public-holiday-hours.enum';
 import { TravelMode, type TripTimingDto } from './trip.dto';
 import { COMFORT_WALK_TOLERANCE } from './user-settings.dto';
 
-/**
- * The travel modes the trip builder plans for. Public transport comes
- * later: it needs timetables.
- */
-export const TRIP_PLAN_TRAVEL_MODES: readonly TravelMode[] = [TravelMode.FOOT, TravelMode.BICYCLE, TravelMode.CAR];
+/** The travel modes the trip builder plans for. Public transport goes by timetables (MOTIS, `cotraveller-transit`). */
+export const TRIP_PLAN_TRAVEL_MODES: readonly TravelMode[] = [TravelMode.FOOT, TravelMode.BICYCLE, TravelMode.CAR, TravelMode.TRANSIT];
 
 /** The vehicle a car trip goes in: how tall it is decides which car parks it fits. */
 export enum VehicleType {
@@ -170,6 +167,11 @@ export enum TripPlanLeftOutReason {
    * reaching it.
    */
   TOO_FAR = 'too-far',
+  /**
+   * By public transport: no connection reaches it at any time of the day, or
+   * none takes the traveller back to the hotel, within their longest walk.
+   */
+  NO_TRANSIT = 'no-transit',
 }
 
 /** How a car trip reaches a place. */
@@ -286,6 +288,71 @@ export interface TripPlanDriverDto {
   leavesAt: string | null;
 }
 
+/** What carries the traveller on a ride, from the timetable's kind of line. */
+export enum TransitVehicle {
+  BUS = 'bus',
+  TRAM = 'tram',
+  SUBWAY = 'subway',
+  TRAIN = 'train',
+  FERRY = 'ferry',
+  /** A cable car, gondola, funicular or chair lift. */
+  CABLE = 'cable',
+  OTHER = 'other',
+}
+
+/** One line taken: what `TripPlanTransitPartDto` rides on. */
+export interface TripPlanTransitRideDto {
+  vehicle: TransitVehicle;
+  /** The line as people call it ("IR 1580", "T4"); null when the timetable names none. */
+  line: string | null;
+  /** Where it is going, as shown on it; null when the timetable says nothing. */
+  headsign: string | null;
+  /** Who runs it. */
+  operator: string | null;
+  /** The line's own colour, `#rrggbb`; null when it has none. */
+  color: string | null;
+  /** Stops passed between getting on and off. */
+  stopsBetween: number;
+}
+
+/** One part of a way by public transport: a walk or a ride. */
+export interface TripPlanTransitPartDto {
+  /** Where it starts: a stop's name; null for the place or hotel left. */
+  from: string | null;
+  /** Where it ends: a stop's name; null for the place or hotel reached. */
+  to: string | null;
+  /** Local `HH:mm`. */
+  departs: string;
+  /** Local `HH:mm`. */
+  arrives: string;
+  seconds: number;
+  meters: number;
+  /** As `[longitude, latitude]` points, for a map; null when not known. */
+  geometry: [number, number][] | null;
+  /** The line taken; null for a walk. */
+  ride: TripPlanTransitRideDto | null;
+}
+
+/**
+ * A way by public transport: the connection arriving soonest after the
+ * traveller is ready to leave, so a stop served twice a week never beats a
+ * farther one served hourly, as its wait counts. No walk in it is longer than
+ * the longest walk (`TripPlanWalksDto`).
+ */
+export interface TripPlanTransitDto {
+  /** When the traveller sets off, local `HH:mm`: later than ready when the connection is. */
+  departs: string;
+  /** When they get there, local `HH:mm`. */
+  arrives: string;
+  /** How many times they change lines. */
+  transfers: number;
+  parts: TripPlanTransitPartDto[];
+  /** The longest single walk in it, in metres. */
+  longestWalkMeters: number;
+  /** A walk in it is longer than the comfortable one, as nothing else gets there or it saves a long time: the page warns. */
+  beyondComfort: boolean;
+}
+
 /** The way from one stop (or the start) to the next. */
 export interface TripPlanLegDto {
   /** Time on the way, in seconds, as the router works it out for the trip's travel mode. */
@@ -297,6 +364,12 @@ export interface TripPlanLegDto {
    * router didn't give it.
    */
   geometry: [number, number][] | null;
+  /**
+   * By public transport, the connection; null when none gets there after the
+   * traveller is ready that day (`seconds` is then a typical time, and the
+   * page says so). Absent in other modes.
+   */
+  transit?: TripPlanTransitDto | null;
 }
 
 /**
@@ -461,6 +534,13 @@ export interface TripPlanDayDto {
   averageSunset?: string | null;
   /** How many places the average is of, for the page to say so. */
   sunPlaces?: number;
+  /**
+   * By public transport, the date whose timetable this day was planned with,
+   * when it isn't the day's own: a trip without dates (a typical weekday), or a
+   * date whose timetable isn't published yet (the same weekday soon). Null or
+   * absent: the day's own.
+   */
+  timetableDate?: string | null;
 }
 
 /** A place left out of the plan, and why. */
@@ -631,6 +711,8 @@ export enum TripPlanBuildStage {
   Places = 'places',
   /** Reading opening hours our tables lack for the trip's dates. */
   Hours = 'hours',
+  /** By public transport: loading the timetables of a country not loaded yet. */
+  Timetables = 'timetables',
   /** Working out the ways between places, the car parks and the days. */
   Routes = 'routes',
   /** Keeping the plan. */
