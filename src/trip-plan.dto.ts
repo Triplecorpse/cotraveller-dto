@@ -383,6 +383,38 @@ export interface TransitRoutesDto {
   routes: TransitRouteDto[];
 }
 
+/** One instruction of a way, as the router words it ("Turn left onto Strada Octavian Goga."). */
+export interface TripPlanDirectionDto {
+  text: string;
+  /** How far this instruction goes on for. */
+  meters: number;
+  seconds: number;
+}
+
+/** A visit's ways in instructions; null for one it hasn't, or the router couldn't tell. */
+export interface TripPlanStopDirectionsDto {
+  listPlaceId: string;
+  /** The walk back to the car, first. */
+  toCar: TripPlanDirectionDto[] | null;
+  /** The way itself. */
+  way: TripPlanDirectionDto[] | null;
+  /** The walk from the car park to the place. */
+  walk: TripPlanDirectionDto[] | null;
+}
+
+/**
+ * `GET /trips/:tripId/plan/directions`: every way of the plan in instructions, for the
+ * PDF to carry offline. By public transport all null: `TripPlanLegDto.transit` says it.
+ */
+export interface TripPlanDirectionsDto {
+  days: {
+    day: number;
+    stops: TripPlanStopDirectionsDto[];
+    returnToCar: TripPlanDirectionDto[] | null;
+    returnWay: TripPlanDirectionDto[] | null;
+  }[];
+}
+
 /** The way from one stop (or the start) to the next. */
 export interface TripPlanLegDto {
   /** Time on the way, in seconds, as the router works it out for the trip's travel mode. */
