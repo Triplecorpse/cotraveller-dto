@@ -353,6 +353,34 @@ export interface TripPlanTransitDto {
   beyondComfort: boolean;
 }
 
+/** What came of a connection MOTIS offered (`TransitRouteDto`). */
+export enum TransitRouteVerdict {
+  /** The one a plan takes. */
+  CHOSEN = 'chosen',
+  /** Fine, but the chosen one arrives sooner, or as soon with fewer changes or less walking. */
+  NOT_BEST = 'not-best',
+  /** Past the comfortable walk, and not saving enough to be worth it. */
+  PAST_COMFORT = 'past-comfort',
+  /** A walk in it is longer than the longest walk. */
+  PAST_LONGEST = 'past-longest',
+  /** A ride getting off where it got on: a timetable's artefact. */
+  POINTLESS = 'pointless',
+}
+
+/** A connection MOTIS offered for a way, and what came of it. For an admin, to see why a way is what it is. */
+export interface TransitRouteDto extends TripPlanTransitDto {
+  verdict: TransitRouteVerdict;
+}
+
+/** `GET /admin/transit-routes`: everything MOTIS offers for one way at one time, the chosen one first. */
+export interface TransitRoutesDto {
+  /** The date whose timetable was asked, `YYYY-MM-DD`. */
+  date: string;
+  /** When the traveller is ready, local `HH:mm`. */
+  readyAt: string;
+  routes: TransitRouteDto[];
+}
+
 /** The way from one stop (or the start) to the next. */
 export interface TripPlanLegDto {
   /** Time on the way, in seconds, as the router works it out for the trip's travel mode. */
