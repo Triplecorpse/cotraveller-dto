@@ -357,9 +357,9 @@ export interface TripPlanTransitDto {
 export enum TransitRouteVerdict {
   /** The one a plan takes. */
   CHOSEN = 'chosen',
-  /** Fine, but the chosen one arrives sooner, or as soon with fewer changes or less walking. */
+  /** Fine, but the chosen one takes less effort: time, changes and walking together. */
   NOT_BEST = 'not-best',
-  /** Past the comfortable walk, and not saving enough to be worth it. */
+  /** Past the comfortable walk, and not saving enough effort to be worth it. */
   PAST_COMFORT = 'past-comfort',
   /** A walk in it is longer than the longest walk. */
   PAST_LONGEST = 'past-longest',
@@ -370,6 +370,8 @@ export enum TransitRouteVerdict {
 /** A connection MOTIS offered for a way, and what came of it. For an admin, to see why a way is what it is. */
 export interface TransitRouteDto extends TripPlanTransitDto {
   verdict: TransitRouteVerdict;
+  /** What the choice goes by, in minutes: the time from when the traveller is ready, plus what its changes and walks are worth. */
+  effortMinutes: number;
 }
 
 /** `GET /admin/transit-routes`: everything MOTIS offers for one way at one time, the chosen one first. */
@@ -435,6 +437,11 @@ export interface TripPlanStopDto {
    * before 2026-10-29.
    */
   trimmedMinutes?: number;
+  /**
+   * By public transport: the day left this visit's area and comes back to it, as
+   * opening hours or the connections needed. Absent when it doesn't.
+   */
+  returnsToArea?: boolean;
   /**
    * Lunch is taken during this visit (a long one, such as a zoo); `leave`
    * includes it.
