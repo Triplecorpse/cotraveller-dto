@@ -19,3 +19,4 @@ export * from './day-hours.dto';
 export * from './trip-plan.dto';
 export * from './user-settings.dto';
 export * from './service-status.dto';
+export * from './place-review.dto';

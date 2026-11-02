@@ -18,4 +18,6 @@ export enum DataSource {
   WEB_SEARCH = 'web_search',
   /** Made up by cotraveller itself, e.g. an unnamed car park's name. */
   COTRAVELLER = 'cotraveller',
+  /** Entered or corrected by an admin. */
+  ADMIN = 'admin',
 }

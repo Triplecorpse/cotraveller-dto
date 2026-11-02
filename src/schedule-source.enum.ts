@@ -12,4 +12,6 @@ export enum ScheduleSource {
   OSM = 'osm',
   /** A reliable page found by searching the web, not the venue's own. */
   WEB_SEARCH = 'web-search',
+  /** Entered or corrected by an admin. */
+  MANUAL = 'manual',
 }
