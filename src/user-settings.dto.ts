@@ -1,9 +1,11 @@
 import { DEFAULT_DAY_HOURS, type DayHoursDto } from './day-hours.dto';
+import type { ContentLanguage, InterfaceLanguage } from './language.dto';
 
 /**
  * The traveller's own settings, kept with their account
- * (`GET`/`PATCH /settings`): their usual day, and how far they like to
- * walk. The trip builder proposes the day; the walks shape every plan.
+ * (`GET`/`PATCH /settings`): their usual day, how far they like to walk,
+ * and their languages. The trip builder proposes the day; the walks shape
+ * every plan.
  */
 export interface UserSettingsDto extends DayHoursDto {
   /**
@@ -23,6 +25,17 @@ export interface UserSettingsDto extends DayHoursDto {
    * park when no road reaches them (a road's place is driven to instead).
    */
   maxWalkMeters: number | null;
+  /**
+   * The language the app's screens are shown in, chosen in the header;
+   * null until the traveller chooses one (the page's own choice then
+   * stands, and is kept here once they are signed in).
+   */
+  interfaceLanguage: InterfaceLanguage | null;
+  /**
+   * The language places are shown in: their names, and the About texts
+   * written or translated for them. Null: the interface language.
+   */
+  contentLanguage: ContentLanguage | null;
 }
 
 /** The comfortable walk proposed: 2 km. */
@@ -45,6 +58,8 @@ export const DEFAULT_USER_SETTINGS: Readonly<UserSettingsDto> = {
   ...DEFAULT_DAY_HOURS,
   comfortWalkMeters: RECOMMENDED_COMFORT_WALK_METERS,
   maxWalkMeters: null,
+  interfaceLanguage: null,
+  contentLanguage: null,
 };
 
 /** Body of `PATCH /settings`: only the settings to change. */

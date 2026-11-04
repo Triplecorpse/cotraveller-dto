@@ -11,7 +11,10 @@ export interface PlaceDescriptionParagraphDto {
  */
 export interface PlaceDescriptionDto {
   placeId: string;
-  /** BCP 47 language tag; currently always `en`. */
+  /**
+   * ISO 639-1 language of the text: the content language asked for
+   * (`CONTENT_LANGUAGE_HEADER`), or English when none is stored in it yet.
+   */
   language: string;
   /** All paragraphs joined with blank lines, ready to display. */
   description: string;
