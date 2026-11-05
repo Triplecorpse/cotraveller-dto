@@ -563,6 +563,13 @@ export interface TripPlanDayDto {
   start: string;
   /** When it is over (the last visit left, or back at the start), local `HH:mm`. */
   end: string;
+  /**
+   * False when the day was arranged by hand since its ways were last worked
+   * out: its visits are where they were put, and its ways aren't calculated
+   * until "Calculate routes" (`ArrangeTripPlanRequestDto.routes`). Absent or
+   * true: the ways and times are worked out.
+   */
+  routed?: boolean;
   stops: TripPlanStopDto[];
   /** The lunch break between visits; null when lunch is inside a visit, off, or the day is over before it. */
   lunch: TripPlanLunchDto | null;
@@ -648,11 +655,23 @@ export interface TripPlanDto {
   manual: boolean;
   days: TripPlanDayDto[];
   leftOut: TripPlanLeftOutDto[];
+  /**
+   * How long each place is visited, as worked out for the plan
+   * (`ListPlaceDto.id` → minutes): what a place on the list counts for when
+   * it is put on a day. A place not worked out yet is missing.
+   */
+  visitMinutes?: Record<string, number>;
 }
 
 /** Body of `POST /trips/:tripId/plan`. */
 export interface BuildTripPlanRequestDto {
   settings: TripPlanSettingsDto;
+  /**
+   * The traveller agreed that Auto may change the visits they placed by hand
+   * (from "Calculate routes"' dialog): they are planned as any other, days
+   * condensed. Absent or false: those visits stay exactly as placed.
+   */
+  replaceManual?: boolean;
 }
 
 /** One visit as the calendar has it. */
@@ -686,6 +705,49 @@ export interface ArrangeTripPlanRequestDto {
   days: TripPlanArrangedDayDto[];
   /** The trip's new "When?" answer, when a day was added or removed; null otherwise. */
   timing: TripTimingDto | null;
+  /**
+   * "Calculate routes": the ways are worked out and each day timed, a visit
+   * moved later where the way doesn't fit. Absent or false (a drop, a resize):
+   * the visits stay where they were put, the ways aren't worked out and the
+   * router isn't asked; days whose visits changed are `routed: false`.
+   */
+  routes?: boolean;
+  /**
+   * With `routes`: keep the plan even when a visit placed by hand moves or a
+   * day goes past its limits. Without it such a plan is answered as
+   * `Conflicts` and not kept.
+   */
+  confirm?: boolean;
+}
+
+/** What doesn't fit once the ways are worked out (`TripPlanArrangeOutcome.Conflicts`). */
+export enum TripPlanConflictKind {
+  /** A visit placed by hand can't start when asked: the way there takes longer. */
+  Moved = 'moved',
+  /** The day starts before its earliest start or ends after its latest end. */
+  PastLimit = 'past-limit',
+}
+
+/** One thing that doesn't fit, as the dialog lists it. */
+export interface TripPlanConflictDto {
+  kind: TripPlanConflictKind;
+  /** 1 for the first day. */
+  day: number;
+  /** `Moved`: the visit. */
+  listPlaceId?: string;
+  /** `Moved`: the time asked for and the earliest it can start, local `HH:mm`. */
+  askedStart?: string;
+  earliest?: string;
+  /** `Moved`: the place before it on the day; null for the start of the day. */
+  fromListPlaceId?: string | null;
+  /** `Moved`: the way there, in minutes. */
+  wayMinutes?: number;
+  /** `PastLimit`: minutes before the earliest start (`early`) and after the latest end (`late`). */
+  early?: number;
+  late?: number;
+  /** `PastLimit`: the limits, local `HH:mm`. */
+  maxStart?: string;
+  maxEnd?: string;
 }
 
 /** What arranging came to. */
@@ -698,12 +760,19 @@ export enum TripPlanArrangeOutcome {
    * it ends.
    */
   Preparing = 'preparing',
+  /**
+   * "Calculate routes" found what doesn't fit (`conflicts`); nothing was kept.
+   * The page asks the traveller, then sends again with `confirm`, fewer
+   * places, more days, or Auto.
+   */
+  Conflicts = 'conflicts',
 }
 
 /** Response of `PUT /trips/:tripId/plan/arrangement` and `POST /trips/:tripId/plan/days/:day/auto`. */
 export type ArrangeTripPlanResponseDto =
   | { outcome: TripPlanArrangeOutcome.Arranged; plan: TripPlanDto }
-  | { outcome: TripPlanArrangeOutcome.Preparing; build: TripPlanBuildDto };
+  | { outcome: TripPlanArrangeOutcome.Preparing; build: TripPlanBuildDto }
+  | { outcome: TripPlanArrangeOutcome.Conflicts; conflicts: TripPlanConflictDto[] };
 
 /** A day's sun, known without a plan. */
 export interface TripPlanCalendarDayDto {
