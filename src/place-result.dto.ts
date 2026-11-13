@@ -33,7 +33,7 @@ export interface PlaceResultDto {
   photoUrls: string[];
   /**
    * True when the photos are still being looked up: `photoUrl`,
-   * `photoUrls` and `photoAuthors` are empty for now, and
+   * `photoUrls`, `photoAuthors` and `photoCredits` are empty for now, and
    * `POST /places/photos` gives them. False or missing: they are final.
    */
   photosPending?: boolean;
@@ -51,6 +51,12 @@ export interface PlaceResultDto {
   regionCode: string | null;
   /** Authors of `photoUrl` that must be credited wherever it's shown. Empty when none are required/known. */
   photoAuthors: PhotoAuthorDto[];
+  /**
+   * The credit each photo's license asks for, one per `photoUrls` entry in
+   * the same order: who made it, the license, and the file's page. Every
+   * photo is a Wikimedia Commons file whose license allows commercial use.
+   */
+  photoCredits: PhotoCreditDto[];
   /**
    * Remarks about the opening hours to show with them, e.g. "Confirmed:
    * same hours on public holidays". Only the internal provider has these;
@@ -122,4 +128,22 @@ export interface PhotoAuthorDto {
   displayName: string;
   /** Link to the author's profile, if any. */
   uri: string | null;
+}
+
+/**
+ * How a photo must be credited wherever it is shown (the card, the PDF):
+ * "© author · license", linking to the file's page. A public domain photo
+ * needs no credit but is still named, so its source stays traceable.
+ */
+export interface PhotoCreditDto {
+  /** Who made the photo, as Commons names them; null when unknown (public domain). */
+  author: string | null;
+  /** The author's page, if Commons gives one. */
+  authorUri: string | null;
+  /** The license's short name, e.g. "CC BY-SA 4.0", "CC0", "Public domain". */
+  license: string;
+  /** The license's text, if it has one (CC licenses do). */
+  licenseUrl: string | null;
+  /** The file's page on Wikimedia Commons: where the photo and its terms are. */
+  sourceUrl: string;
 }

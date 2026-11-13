@@ -1,4 +1,4 @@
-import type { PhotoAuthorDto } from './place-result.dto';
+import type { PhotoAuthorDto, PhotoCreditDto } from './place-result.dto';
 
 /** `POST /places/photos`: the places whose photos a page is waiting for. */
 export interface PlacePhotosRequestDto {
@@ -14,6 +14,8 @@ export interface PlacePhotosDto {
   photoUrls: string[];
   /** Who must be credited wherever `photoUrl` is shown. */
   photoAuthors: PhotoAuthorDto[];
+  /** Each photo's credit, one per `photoUrls` entry (see `PlaceResultDto.photoCredits`). */
+  photoCredits: PhotoCreditDto[];
 }
 
 /** The answer to `POST /places/photos`: every place asked for, by its id. */
