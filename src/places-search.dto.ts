@@ -107,3 +107,14 @@ export interface ResolvedPlaceDto {
   /** ISO 3166-1 alpha-2 code of the country it is or is in, e.g. `PT`; null when unknown. */
   countryCode: string | null;
 }
+
+/**
+ * `GET /places/reverse?latitude=&longitude=`: the address at a point, for
+ * the traveller's current location in the trip stepper.
+ */
+export interface ReverseGeocodeDto {
+  /** The address as one line ("Rua Augusta 24, 1100-053 Lisbon, Portugal"); null when nothing is known there. */
+  address: string | null;
+  /** Its first line ("Rua Augusta 24"), or the address; null with it. */
+  name: string | null;
+}

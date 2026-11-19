@@ -20,6 +20,12 @@ export interface PlaceResultDto {
   latitude: number;
   longitude: number;
   category: CategoryId | null;
+  /**
+   * How popular the place is, 1–5 stars (`popularityStars`), from how much
+   * Wikipedia covers and reads it (cotraveller-back's `places.score`).
+   * Null when unknown: not yet worked out, or the place isn't stored.
+   */
+  popularity: number | null;
   distanceMeters: number | null;
   /** The place's own website, when it has one. */
   websiteUrl: string | null;
@@ -146,4 +152,22 @@ export interface PhotoCreditDto {
   licenseUrl: string | null;
   /** The file's page on Wikimedia Commons: where the photo and its terms are. */
   sourceUrl: string;
+}
+
+/**
+ * The scores (cotraveller-back's `placeScore`: log10 of the monthly
+ * Wikipedia reads plus twice log10 of the editions) at which a place
+ * earns 2, 3, 4 and 5 stars. Fixed, the same worldwide: a village
+ * chapel with one article scores about 3 (1 star), a town museum with
+ * ten editions about 5.6 (3), a major sight about 8 (5), the Eiffel
+ * Tower 9.9.
+ */
+export const POPULARITY_STAR_SCORES: readonly number[] = [3.5, 5, 6.5, 8];
+
+/** A score as 1–5 stars (`POPULARITY_STAR_SCORES`); null for no score. */
+export function popularityStars(score: number | null | undefined): number | null {
+  if (score === null || score === undefined || !Number.isFinite(score)) {
+    return null;
+  }
+  return 1 + POPULARITY_STAR_SCORES.filter((threshold) => score >= threshold).length;
 }
